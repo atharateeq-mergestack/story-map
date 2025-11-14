@@ -1,12 +1,11 @@
-# PUUSH – Project Management ERP System
+# 🗺️ StoryMap – Interactive Tour & Destination Explorer
 
-PUUSH (push.com) is a modern project management ERP platform designed for organizations managing multiple companies under one roof. With PUUSH, you can:
+StoryMap is an interactive map-driven experience designed to showcase tours, dates, and destinations through a synchronized scrollable list and dynamic map interface. It allows users to explore routes, zoom into locations, view time-based itineraries, and navigate between destinations much like modern story-mapping platforms.
 
-- Create and manage multiple companies within a single system
-- Build departments and teams for each company
-- Assign and track tasks and projects across teams
-- Monitor progress, generate reports, and perform audits
-- Keep track of financial documents and project-related files
+With StoryMap, users can
+  - View tours organized by dates and time slots
+  - Scroll through destinations with map auto-syncing
+  - Select locations to enter detailed view
 
 Built with [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), and [TypeScript](https://www.typescriptlang.org/).
 
