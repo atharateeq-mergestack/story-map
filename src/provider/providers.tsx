@@ -1,12 +1,15 @@
 'use client';
 
 import type { PropsWithChildren } from 'react';
+import { ThemeProvider } from '@/components/ui/theme/ThemeProvider';
 import { JotaiProvider } from './jotai-provider';
 
 export const Providers = ({ children }: PropsWithChildren) => {
   return (
     <JotaiProvider>
-      {children}
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
     </JotaiProvider>
   );
 };

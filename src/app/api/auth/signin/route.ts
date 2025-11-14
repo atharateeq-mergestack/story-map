@@ -1,10 +1,10 @@
 /**
  * Sign In API Route
- * 
+ *
  * POST /api/auth/signin
- * 
+ *
  * Authenticates a user and returns their session.
- * 
+ *
  * Body:
  * {
  *   email: string
@@ -12,7 +12,8 @@
  * }
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
@@ -59,4 +60,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

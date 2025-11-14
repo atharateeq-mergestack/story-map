@@ -51,7 +51,6 @@ next-env.d.ts
 
 # Database
 *.db
-/drizzle
 
 # playwright
 /test-results/

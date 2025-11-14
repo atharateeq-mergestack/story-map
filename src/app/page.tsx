@@ -1,20 +1,21 @@
 /**
  * Landing Page (/)
- * 
+ *
  * Public page - only accessible when NOT logged in.
  * If user is logged in, redirects to /dashboard.
  */
 
-import { redirect } from 'next/navigation';
-import { isAuthenticated } from '@/lib/supabase/server-auth';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { redirect } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggleButton } from '@/components/ui/theme/ThemeToggleButton';
+import { isAuthenticated } from '@/lib/supabase/server-auth';
 
 export default async function LandingPage() {
   // Check if user is authenticated
   const authenticated = await isAuthenticated();
-  
+
   // If logged in, redirect to dashboard
   if (authenticated) {
     redirect('/dashboard');
@@ -22,6 +23,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+      <ThemeToggleButton />
       <div className="w-full max-w-4xl space-y-8">
         {/* Hero Section */}
         <div className="text-center space-y-4">

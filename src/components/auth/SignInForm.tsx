@@ -1,24 +1,25 @@
 /**
  * Sign In Form Component
- * 
+ *
  * Login form with React Hook Form + Yup validation.
  * Uses shadcn/ui components and reusable InputField.
  */
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import type { SignInFormData } from '@/lib/validations/signin.schema';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useAuth } from '@/hooks/useAuth';
-import { signInSchema, type SignInFormData } from '@/lib/validations/signin.schema';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import { signInSchema } from '@/lib/validations/signin.schema';
 
 export function SignInForm() {
   const router = useRouter();
@@ -35,12 +36,11 @@ export function SignInForm() {
 
   const onSubmit = async (data: SignInFormData) => {
     setError(null);
-    
+
     try {
       await signIn(data.email, data.password);
       // Redirect to dashboard on success
       router.push('/dashboard');
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in. Please try again.');
     }
@@ -104,7 +104,8 @@ export function SignInForm() {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
+              Don't have an account?
+              {' '}
               <Link href="/auth/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
