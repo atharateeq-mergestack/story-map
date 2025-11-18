@@ -1,106 +1,48 @@
-/**
- * Profile Hook
- * 
- * React hook for managing user profile data.
- * 
- * Usage:
- * ```tsx
- * const { profile, loading, error, updateProfile, refreshProfile } = useProfile();
- * ```
- */
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from './useAuth';
-import type { Profile } from '@/db/schema';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import userController from '@/store/userController';
 
 export function useProfile() {
-  const { user, session } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { user: profile, loading } = userController.useState(['user', 'loading']);
   const [error, setError] = useState<Error | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
-    if (!user || !session) {
-      setProfile(null);
-      setLoading(false);
-      return;
+  const updateProfile = async (updates: { fullName?: string; email?: string }) => {
+    if (!profile) {
+      throw new Error('Not authenticated');
     }
+
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
+      // Use userController's updateProfile method which calls the API
+      await userController.updateProfile(updates);
 
-      const response = await fetch('/api/profiles', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
-      setProfile(data.profile);
+      // Refresh router to update server-side state
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setProfile(null);
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      setError(error);
+      throw error;
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
-  }, [user, session]);
+  };
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const updateProfile = useCallback(
-    async (updates: { fullName?: string; email?: string }) => {
-      if (!user || !session) {
-        throw new Error('Not authenticated');
-      }
-
-      try {
-        setError(null);
-
-        const response = await fetch(`/api/profiles/${user.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(updates),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update profile');
-        }
-
-        const data = await response.json();
-        setProfile(data.profile);
-        return data.profile;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
-        setError(error);
-        throw error;
-      }
-    },
-    [user, session],
-  );
-
-  const refreshProfile = useCallback(() => {
-    return fetchProfile();
-  }, [fetchProfile]);
+  const refreshProfile = async () => {
+    // Refresh router to re-fetch server-side data and re-hydrate userController
+    router.refresh();
+  };
 
   return {
     profile,
-    loading,
+    loading: loading || isSubmitting,
     error,
     updateProfile,
     refreshProfile,
   };
 }
-

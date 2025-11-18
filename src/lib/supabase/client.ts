@@ -1,14 +1,16 @@
 /**
  * Supabase Client for Frontend (Browser)
  *
- * This client uses the anon key and is safe to use in the browser.
- * It automatically handles authentication state and browser storage.
+ * @deprecated This client is no longer used in the application.
+ * All Supabase calls are now made server-side via API routes.
  *
- * Usage:
- * ```ts
- * import { supabase } from '@/lib/supabase/client';
- * const { data } = await supabase.auth.getUser();
- * ```
+ * This file is kept for reference but should not be imported.
+ * Use API routes instead:
+ * - /api/auth/signin
+ * - /api/auth/signup
+ * - /api/auth/signout
+ * - /api/auth/user
+ * - /api/profiles
  */
 
 import { createBrowserClient } from '@supabase/ssr';
@@ -16,10 +18,9 @@ import { Env } from '@/libs/Env';
 
 /**
  * Supabase client for use in client components.
- * This client uses the anon key and respects Row Level Security (RLS).
  *
- * ⚠️ IMPORTANT: Only use this in client components (components with "use client" directive).
- * For server-side code, use createClient() from '@/lib/supabase/server'.
+ * ⚠️ DEPRECATED: Do not use this client.
+ * All Supabase operations should go through API routes.
  */
 export const supabase = createBrowserClient(
   Env.NEXT_PUBLIC_SUPABASE_URL,

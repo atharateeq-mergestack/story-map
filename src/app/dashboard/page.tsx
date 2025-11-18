@@ -5,32 +5,15 @@
  * If user is not logged in, redirects to /.
  */
 
-import { redirect } from 'next/navigation';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getServerUser } from '@/lib/supabase/server-auth';
 
 export default async function DashboardPage() {
-  // Check if user is authenticated
-  const user = await getServerUser();
-
-  // If not logged in, redirect to landing page
-  if (!user) {
-    redirect('/');
-  }
-
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back,
-            {' '}
-            {user.email}
-            !
-          </p>
-        </div>
+        <DashboardHeader />
 
         {/* Coming Soon Card */}
         <Card>

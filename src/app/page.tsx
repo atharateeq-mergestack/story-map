@@ -28,7 +28,7 @@ export default async function LandingPage() {
         {/* Hero Section */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-            Welcome to Puush
+            Welcome to Tour Map
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Your all-in-one platform for productivity and collaboration.

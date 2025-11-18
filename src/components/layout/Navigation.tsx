@@ -1,14 +1,7 @@
-/**
- * Navigation Component
- *
- * Header navigation with user menu and sign out functionality.
- * Only shows when user is authenticated.
- */
-
 'use client';
 
 import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,18 +13,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import userController from '@/store/userController';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 export function Navigation() {
-  const { user, signOut, loading } = useAuth();
+  const { signOut } = useAuth();
+  const { user } = userController.useState(['user']);
 
-  // Don't render if not authenticated
-  if (!user || loading) {
-    return null;
+  if (!user) {
+    redirect('/auth/login');
   }
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      redirect('/');
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -39,18 +35,18 @@ export function Navigation() {
 
   // Get user initials for avatar
   const getInitials = () => {
-    if (user.email) {
-      return user.email.charAt(0).toUpperCase();
+    if (user.fullName) {
+      return user.fullName.charAt(0).toUpperCase();
     }
     return 'U';
   };
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-lg font-semibold">
-            Puush
+            Tour Map
           </Link>
           <div className="hidden md:flex items-center gap-4">
             <Link
@@ -74,7 +70,7 @@ export function Navigation() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || 'User'} />
+                  <AvatarImage alt={user.email || 'User'} />
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
@@ -83,7 +79,7 @@ export function Navigation() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user.user_metadata?.full_name || 'User'}
+                    {user?.fullName || 'User'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}

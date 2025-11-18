@@ -19,14 +19,8 @@ import { Input } from '@/components/ui/input';
 import { useProfile } from '@/hooks/useProfile';
 import { profileSchema } from '@/lib/validations/profile.schema';
 
-type ProfileFormProps = {
-  userId: string;
-};
-
-export function ProfileForm({ userId: _userId }: ProfileFormProps) {
+export function ProfileForm() {
   const { profile, loading, error, updateProfile } = useProfile();
-  const [saveError, setSaveError] = React.useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = React.useState(false);
 
   const form = useForm<ProfileFormData>({
     // @ts-expect-error - yup resolver type mismatch with optional fields
@@ -48,18 +42,13 @@ export function ProfileForm({ userId: _userId }: ProfileFormProps) {
   }, [profile, form]);
 
   const onSubmit = async (data: ProfileFormData) => {
-    setSaveError(null);
-    setSaveSuccess(false);
-
     try {
       await updateProfile({
         fullName: data.fullName || undefined,
         email: data.email,
       });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to update profile');
+      console.error('Failed to update profile', err);
     }
   };
 
@@ -131,31 +120,6 @@ export function ProfileForm({ userId: _userId }: ProfileFormProps) {
             </FormItem>
           )}
         />
-
-        <div className="text-sm text-muted-foreground space-y-1">
-          <div>
-            <span className="font-medium">User ID:</span>
-            {' '}
-            {profile.userId}
-          </div>
-          <div>
-            <span className="font-medium">Created:</span>
-            {' '}
-            {new Date(profile.createdAt).toLocaleDateString()}
-          </div>
-        </div>
-
-        {saveError && (
-          <Alert variant="destructive">
-            <AlertDescription>{saveError}</AlertDescription>
-          </Alert>
-        )}
-
-        {saveSuccess && (
-          <Alert>
-            <AlertDescription>Profile updated successfully!</AlertDescription>
-          </Alert>
-        )}
 
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}

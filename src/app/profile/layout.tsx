@@ -1,6 +1,6 @@
 /**
  * Profile Layout
- * 
+ *
  * Wraps profile page with protected layout and navigation.
  */
 
@@ -13,4 +13,3 @@ export default function ProfileLayout({
 }) {
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
-

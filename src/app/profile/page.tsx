@@ -1,23 +1,21 @@
 /**
  * Profile Page (/profile)
- * 
+ *
  * Protected page - only accessible when logged in.
  * If user is not logged in, redirects to /.
  */
 
-import { redirect } from 'next/navigation';
-import { getServerUser } from '@/lib/supabase/server-auth';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function ProfilePage() {
   // Check if user is authenticated
-  const user = await getServerUser();
-  
-  // If not logged in, redirect to landing page
-  if (!user) {
-    redirect('/');
-  }
+  // const user = await getServerUser();
+
+  // // If not logged in, redirect to landing page
+  // if (!user) {
+  //   redirect('/');
+  // }
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -39,11 +37,10 @@ export default async function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ProfileForm userId={user.id} />
+            <ProfileForm />
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-
