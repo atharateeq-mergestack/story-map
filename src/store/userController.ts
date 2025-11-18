@@ -1,10 +1,3 @@
-/**
- * User Controller
- *
- * Manages user state using Jotai StateController.
- * All Supabase operations are done server-side via API routes.
- */
-
 import type { Profile } from '@/db/schema';
 import { StateController } from './stateController';
 
@@ -23,10 +16,6 @@ class UserController extends StateController<IUserState> {
     super(initialUserState);
   }
 
-  /**
-   * Updates the user profile.
-   * This calls the API route to update the profile server-side.
-   */
   async updateProfile(updates: Partial<Profile>) {
     const user = this.getValue('user');
 

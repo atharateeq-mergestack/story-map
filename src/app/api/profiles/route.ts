@@ -1,28 +1,20 @@
-/**
- * Profiles API Route
- * 
- * GET /api/profiles - Get all profiles (or current user's profile)
- * POST /api/profiles - Create a new profile
- * 
- * For authenticated requests, the session is read from cookies automatically.
- */
-
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import type { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/profiles
  * Get profiles. If authenticated, returns current user's profile.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Try to get user from cookies (SSR client)
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (!authError && user) {
       // Authenticated request - get current user's profile
       const [profile] = await db

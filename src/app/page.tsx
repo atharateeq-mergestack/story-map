@@ -1,10 +1,3 @@
-/**
- * Landing Page (/)
- *
- * Public page - only accessible when NOT logged in.
- * If user is logged in, redirects to /dashboard.
- */
-
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -22,7 +15,7 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-background to-muted p-4">
       <ThemeToggleButton />
       <div className="w-full max-w-4xl space-y-8">
         {/* Hero Section */}

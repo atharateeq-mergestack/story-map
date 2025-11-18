@@ -1,12 +1,3 @@
-/**
- * Get Current User API Route
- *
- * GET /api/auth/user
- *
- * Returns the current authenticated user from the session cookie.
- * Returns null if no user is authenticated.
- */
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';

@@ -1,10 +1,3 @@
-/**
- * Theme Toggle Button Component
- *
- * Standalone theme toggle button for use on public pages.
- * Positioned in the top-right corner.
- */
-
 'use client';
 
 import { ThemeToggle } from './ThemeToggle';

@@ -1,23 +1,15 @@
-/**
- * Profile by User ID API Route
- * 
- * GET /api/profiles/[userId] - Get a specific profile
- * PUT /api/profiles/[userId] - Update a profile
- * DELETE /api/profiles/[userId] - Delete a profile
- */
-
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import type { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/profiles/[userId]
  * Get a specific profile by user ID
  */
 export async function GET(
-  request: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
@@ -62,7 +54,7 @@ export async function PUT(
     // Verify authentication from cookies
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user || user.id !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -74,9 +66,13 @@ export async function PUT(
     const updateData: Partial<typeof profiles.$inferInsert> = {
       updatedAt: new Date(),
     };
-    
-    if (fullName !== undefined) updateData.fullName = fullName;
-    if (email !== undefined) updateData.email = email;
+
+    if (fullName !== undefined) {
+      updateData.fullName = fullName;
+    }
+    if (email !== undefined) {
+      updateData.email = email;
+    }
 
     const [updatedProfile] = await db
       .update(profiles)
@@ -115,7 +111,7 @@ export async function DELETE(
     // Verify authentication from cookies
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user || user.id !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },

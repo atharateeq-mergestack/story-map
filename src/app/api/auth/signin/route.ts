@@ -1,17 +1,3 @@
-/**
- * Sign In API Route
- *
- * POST /api/auth/signin
- *
- * Authenticates a user and returns their session.
- *
- * Body:
- * {
- *   email: string
- *   password: string
- * }
- */
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';

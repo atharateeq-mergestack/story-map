@@ -1,16 +1,3 @@
-/**
- * Authentication Hook
- *
- * React hook for managing authentication state and operations.
- * Uses userController for state management (hydrated from server-side).
- * All Supabase calls are made server-side via API routes.
- *
- * Usage:
- * ```tsx
- * const { user, signIn, signUp, signOut, loading } = useAuth();
- * ```
- */
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -107,10 +94,6 @@ export function useAuth() {
 
       // Clear user state in controller
       userController.updateState({ user: null, loading: false });
-
-      // Redirect to landing page after sign out
-
-      // router.refresh();
     } finally {
       setIsSubmitting(false);
     }

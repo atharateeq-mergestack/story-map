@@ -1,10 +1,3 @@
-/**
- * Profiles Table Schema
- *
- * This table stores user profile information linked to Supabase Auth users.
- * The user_id references auth.users.id from Supabase Auth.
- */
-
 import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const profiles = pgTable('profiles', {

@@ -1,10 +1,3 @@
-/**
- * Login Page (/auth/login)
- *
- * Public page - only accessible when NOT logged in.
- * If user is logged in, redirects to /dashboard.
- */
-
 import { redirect } from 'next/navigation';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { ThemeToggleButton } from '@/components/ui/theme/ThemeToggleButton';
@@ -20,7 +13,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background to-muted p-4">
       <ThemeToggleButton />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">

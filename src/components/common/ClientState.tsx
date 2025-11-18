@@ -1,10 +1,3 @@
-/**
- * Client State Component
- *
- * Hydrates the user state in the client-side store from server-side data.
- * This component should be rendered in the root layout.
- */
-
 'use client';
 
 import type { User } from '@supabase/supabase-js';

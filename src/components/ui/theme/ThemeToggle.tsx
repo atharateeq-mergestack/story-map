@@ -1,9 +1,3 @@
-/**
- * Theme Toggle Component
- *
- * Button component for switching between light and dark themes.
- */
-
 'use client';
 
 import { Moon, Sun } from 'lucide-react';

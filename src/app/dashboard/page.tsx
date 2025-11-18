@@ -1,10 +1,3 @@
-/**
- * Dashboard Page (/dashboard)
- *
- * Protected page - only accessible when logged in.
- * If user is not logged in, redirects to /.
- */
-
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 

@@ -1,9 +1,3 @@
-/**
- * Profile Validation Schema
- *
- * Yup schema for profile form validation.
- */
-
 import * as yup from 'yup';
 
 export const profileSchema = yup.object({
@@ -19,4 +13,3 @@ export const profileSchema = yup.object({
 });
 
 export type ProfileFormData = yup.InferType<typeof profileSchema>;
-

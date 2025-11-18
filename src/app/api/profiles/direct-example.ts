@@ -1,19 +1,9 @@
-/**
- * Direct Drizzle Usage Example (Server-side)
- * 
- * This file demonstrates how to use Drizzle directly in Server Components
- * or Server Actions without going through API routes.
- * 
- * ⚠️ This is for reference only - not meant to be imported directly.
- * Copy the patterns into your Server Components or Server Actions.
- */
-
+import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 /**
- * Example: Get all profiles (Server Component)
+ * Get all profiles (Server Component)
  */
 export async function getAllProfiles() {
   const allProfiles = await db.select().from(profiles);
@@ -21,7 +11,7 @@ export async function getAllProfiles() {
 }
 
 /**
- * Example: Get profile by user ID (Server Component)
+ * Get profile by user ID (Server Component)
  */
 export async function getProfileByUserId(userId: string) {
   const [profile] = await db
@@ -34,7 +24,7 @@ export async function getProfileByUserId(userId: string) {
 }
 
 /**
- * Example: Create profile (Server Action)
+ * Create profile (Server Action)
  */
 export async function createProfile(data: {
   userId: string;
@@ -54,7 +44,7 @@ export async function createProfile(data: {
 }
 
 /**
- * Example: Update profile (Server Action)
+ * Update profile (Server Action)
  */
 export async function updateProfile(
   userId: string,
@@ -73,7 +63,7 @@ export async function updateProfile(
 }
 
 /**
- * Example: Delete profile (Server Action)
+ * Delete profile (Server Action)
  */
 export async function deleteProfile(userId: string) {
   const [deletedProfile] = await db
@@ -83,4 +73,3 @@ export async function deleteProfile(userId: string) {
 
   return deletedProfile;
 }
-

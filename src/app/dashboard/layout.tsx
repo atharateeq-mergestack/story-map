@@ -1,9 +1,3 @@
-/**
- * Dashboard Layout
- *
- * Wraps dashboard page with protected layout and navigation.
- */
-
 import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 
 export default function DashboardLayout({

@@ -1,21 +1,3 @@
-/**
- * Drizzle Database Connection
- *
- * This file provides the Drizzle database client for both frontend and backend.
- *
- * Usage in API routes:
- * ```ts
- * import { db } from '@/db';
- * const profiles = await db.select().from(profilesTable);
- * ```
- *
- * Usage in Server Components:
- * ```ts
- * import { db } from '@/db';
- * const profile = await db.select().from(profilesTable).where(eq(profilesTable.userId, userId));
- * ```
- */
-
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { Env } from '@/libs/Env';

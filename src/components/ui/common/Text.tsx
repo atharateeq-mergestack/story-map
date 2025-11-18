@@ -1,9 +1,3 @@
-/**
- * Text Component
- *
- * Reusable text component with theme-aware styling and responsive typography.
- */
-
 'use client';
 
 import * as React from 'react';

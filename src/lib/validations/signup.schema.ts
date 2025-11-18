@@ -1,9 +1,3 @@
-/**
- * Sign Up Validation Schema
- *
- * Yup schema for sign up form validation.
- */
-
 import * as yup from 'yup';
 
 export const signUpSchema = yup.object({
@@ -31,4 +25,3 @@ export const signUpSchema = yup.object({
 });
 
 export type SignUpFormData = yup.InferType<typeof signUpSchema>;
-

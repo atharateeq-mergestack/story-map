@@ -1,9 +1,3 @@
-/**
- * Profile Layout
- *
- * Wraps profile page with protected layout and navigation.
- */
-
 import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 
 export default function ProfileLayout({

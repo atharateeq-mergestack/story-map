@@ -1,9 +1,3 @@
-/**
- * Theme Configuration
- *
- * Central configuration for colors, typography, spacing, shadows, and breakpoints.
- */
-
 export const theme = {
   colors: {
     // Primary colors

@@ -1,9 +1,3 @@
-/**
- * Theme Provider Component
- *
- * Provides theme context and manages theme state.
- */
-
 'use client';
 
 import * as React from 'react';

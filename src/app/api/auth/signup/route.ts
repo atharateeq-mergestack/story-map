@@ -1,18 +1,3 @@
-/**
- * Sign Up API Route
- *
- * POST /api/auth/signup
- *
- * Creates a new user account and automatically creates a profile.
- *
- * Body:
- * {
- *   email: string
- *   password: string
- *   fullName?: string
- * }
- */
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';

@@ -1,28 +1,20 @@
-/**
- * Sign Up Form Component
- * 
- * Registration form with React Hook Form + Yup validation.
- * Uses shadcn/ui components and reusable InputField.
- * Creates user with Supabase Auth and profile with Drizzle ORM.
- */
-
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import type { SignUpFormData } from '@/lib/validations/signup.schema';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useAuth } from '@/hooks/useAuth';
-import { signUpSchema, type SignUpFormData } from '@/lib/validations/signup.schema';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import { signUpSchema } from '@/lib/validations/signup.schema';
 
 export function SignUpForm() {
-  const router = useRouter();
   const { signUp, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
@@ -38,15 +30,13 @@ export function SignUpForm() {
 
   const onSubmit = async (data: SignUpFormData) => {
     setError(null);
-    
+
     try {
       // Sign up user with Supabase Auth
       // The signUp function will also create the profile via API
       await signUp(data.email, data.password, data.fullName);
-      
       // Redirect to dashboard on success
-      router.push('/dashboard');
-      router.refresh();
+      redirect('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
     }
@@ -148,7 +138,8 @@ export function SignUpForm() {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}
+              Already have an account?
+              {' '}
               <Link href="/auth/login" className="text-primary hover:underline">
                 Sign in
               </Link>

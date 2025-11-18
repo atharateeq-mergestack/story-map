@@ -1,9 +1,3 @@
-/**
- * Heading Component
- *
- * Reusable heading component with theme-aware styling and responsive typography.
- */
-
 'use client';
 
 import * as React from 'react';

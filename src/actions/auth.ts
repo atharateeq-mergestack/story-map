@@ -1,10 +1,3 @@
-/**
- * Server Actions for Authentication
- *
- * These server actions fetch user data server-side and can be used
- * in Server Components and Server Actions.
- */
-
 'use server';
 
 import type { User } from '@supabase/supabase-js';
