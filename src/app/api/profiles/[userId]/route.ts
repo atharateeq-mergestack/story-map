@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -59,19 +59,9 @@ export async function PUT(
     const body = await request.json();
     const { fullName, email } = body;
 
-    // Verify authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = createServerClient();
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Verify authentication from cookies
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user || user.id !== userId) {
       return NextResponse.json(
@@ -122,19 +112,9 @@ export async function DELETE(
   try {
     const { userId } = await params;
 
-    // Verify authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = createServerClient();
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Verify authentication from cookies
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user || user.id !== userId) {
       return NextResponse.json(
@@ -167,4 +147,3 @@ export async function DELETE(
     );
   }
 }
-

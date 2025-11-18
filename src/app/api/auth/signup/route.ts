@@ -1,10 +1,10 @@
 /**
  * Sign Up API Route
- * 
+ *
  * POST /api/auth/signup
- * 
+ *
  * Creates a new user account and automatically creates a profile.
- * 
+ *
  * Body:
  * {
  *   email: string
@@ -13,11 +13,11 @@
  * }
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabase = createServerClient();
+    const supabase = await createClient();
 
     // Sign up the user
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -80,4 +80,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

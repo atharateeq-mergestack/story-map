@@ -4,12 +4,11 @@
  * GET /api/profiles - Get all profiles (or current user's profile)
  * POST /api/profiles - Create a new profile
  * 
- * For authenticated requests, include Authorization header:
- * Authorization: Bearer <access_token>
+ * For authenticated requests, the session is read from cookies automatically.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { db } from '@/db';
 import { profiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -20,22 +19,12 @@ import { eq } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Try to get user from cookies (SSR client)
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authHeader) {
+    if (!authError && user) {
       // Authenticated request - get current user's profile
-      const token = authHeader.replace('Bearer ', '');
-      const supabase = createServerClient();
-      
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      
-      if (authError || !user) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 },
-        );
-      }
-
       const [profile] = await db
         .select()
         .from(profiles)
@@ -98,4 +87,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

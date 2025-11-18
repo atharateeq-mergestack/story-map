@@ -1,60 +1,49 @@
 /**
- * Supabase Client for Backend (Server-side)
+ * Supabase Client for Server-side (Server Components, Server Actions, API Routes)
  *
- * This client uses the service role key and bypasses RLS.
- * ONLY use this in API routes, server components, or server actions.
- * NEVER expose this client to the browser.
+ * This client handles authentication on the server using cookies.
+ * Automatically manages session cookies via @supabase/ssr.
  *
  * Usage:
  * ```ts
- * import { createServerClient } from '@/lib/supabase/server';
- * const supabase = createServerClient();
+ * import { createClient } from '@/lib/supabase/server';
+ * const supabase = await createClient();
  * ```
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { Env } from '@/libs/Env';
 
 /**
  * Creates a Supabase client for use on the server.
- * This client uses the service role key and bypasses RLS.
+ * This client uses the anon key and automatically manages session cookies.
  *
- * ⚠️ WARNING: Only use this in server-side code (API routes, server components, server actions).
- * Never expose the service role key to the client.
+ * ⚠️ IMPORTANT: Only use this in server-side code (Server Components, Server Actions, API Routes).
+ * For client components, use the browser client from '@/lib/supabase/client'.
  */
-export function createServerClient() {
-  return createClient(
-    Env.NEXT_PUBLIC_SUPABASE_URL,
-    Env.SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-}
+export async function createClient() {
+  const cookieStore = await cookies();
 
-/**
- * Creates a Supabase client from a user's session token.
- * This is useful when you need to perform operations as a specific user
- * while still respecting RLS policies.
- *
- * @param accessToken - The user's access token from their session
- */
-export function createServerClientWithAuth(accessToken: string) {
-  return createClient(
+  return createServerClient(
     Env.NEXT_PUBLIC_SUPABASE_URL,
     Env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
         },
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
       },
     },
   );

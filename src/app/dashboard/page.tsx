@@ -12,7 +12,7 @@ import { getServerUser } from '@/lib/supabase/server-auth';
 export default async function DashboardPage() {
   // Check if user is authenticated
   const user = await getServerUser();
-  console.log(user);
+
   // If not logged in, redirect to landing page
   if (!user) {
     redirect('/');
