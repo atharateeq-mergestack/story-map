@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { desc, eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
 
 // GET - List all tours
 export async function GET() {
@@ -82,4 +83,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

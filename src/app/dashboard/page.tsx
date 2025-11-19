@@ -1,8 +1,11 @@
+import { desc, eq } from 'drizzle-orm';
+import { PlusIcon } from 'lucide-react';
+import Link from 'next/link';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { TourActions } from '@/components/dashboard/TourActions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -11,11 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import Link from 'next/link';
-import { PlusIcon } from 'lucide-react';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
 
 async function getTours() {
   try {
@@ -38,7 +38,7 @@ async function hasActiveTour() {
       .where(eq(tours.status, 'active'))
       .limit(1);
     return activeTour.length > 0;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -72,87 +72,89 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {allTours.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-4">
-                  <p className="text-lg text-muted-foreground">
-                    No tours yet. Create your first tour to get started.
-                  </p>
-                  <Link href="/dashboard/tours/new">
-                    <Button>Create Tour</Button>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tour Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Start Location</TableHead>
-                    <TableHead>End Location</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allTours.map((tour: {
-                    id: string;
-                    name: string;
-                    status: 'active' | 'inactive';
-                    startDate: string | null;
-                    endDate: string | null;
-                    startLocation: string | null;
-                    endLocation: string | null;
-                    createdAt: Date | string;
-                  }) => (
-                    <TableRow key={tour.id}>
-                      <TableCell className="font-medium">
-                        <Link
-                          href={`/dashboard/tours/${tour.id}`}
-                          className="hover:underline"
-                        >
-                          {tour.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            tour.status === 'active' ? 'default' : 'secondary'
-                          }
-                        >
-                          {tour.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {tour.startDate
-                          ? new Date(tour.startDate).toLocaleDateString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {tour.endDate
-                          ? new Date(tour.endDate).toLocaleDateString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell>{tour.startLocation || '-'}</TableCell>
-                      <TableCell>{tour.endLocation || '-'}</TableCell>
-                      <TableCell>
-                        {new Date(tour.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <TourActions
-                          tourId={tour.id}
-                          currentStatus={tour.status}
-                          hasActiveTour={hasActive}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            {allTours.length === 0
+              ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <p className="text-lg text-muted-foreground">
+                        No tours yet. Create your first tour to get started.
+                      </p>
+                      <Link href="/dashboard/tours/new">
+                        <Button>Create Tour</Button>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tour Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Start Location</TableHead>
+                        <TableHead>End Location</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allTours.map((tour: {
+                        id: string;
+                        name: string;
+                        status: 'active' | 'inactive';
+                        startDate: string | null;
+                        endDate: string | null;
+                        startLocation: string | null;
+                        endLocation: string | null;
+                        createdAt: Date | string;
+                      }) => (
+                        <TableRow key={tour.id}>
+                          <TableCell className="font-medium">
+                            <Link
+                              href={`/dashboard/tours/${tour.id}`}
+                              className="hover:underline"
+                            >
+                              {tour.name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                tour.status === 'active' ? 'default' : 'secondary'
+                              }
+                            >
+                              {tour.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {tour.startDate
+                              ? new Date(tour.startDate).toLocaleDateString()
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {tour.endDate
+                              ? new Date(tour.endDate).toLocaleDateString()
+                              : '-'}
+                          </TableCell>
+                          <TableCell>{tour.startLocation || '-'}</TableCell>
+                          <TableCell>{tour.endLocation || '-'}</TableCell>
+                          <TableCell>
+                            {new Date(tour.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <TourActions
+                              tourId={tour.id}
+                              currentStatus={tour.status}
+                              hasActiveTour={hasActive}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
           </CardContent>
         </Card>
       </div>

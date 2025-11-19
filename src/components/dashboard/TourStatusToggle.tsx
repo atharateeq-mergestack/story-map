@@ -1,8 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -10,12 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useRouter } from 'next/navigation';
 
-interface TourStatusToggleProps {
+type TourStatusToggleProps = {
   tourId: string;
   currentStatus: 'active' | 'inactive';
-}
+};
 
 export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProps) {
   const router = useRouter();
@@ -23,7 +22,9 @@ export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProp
   const [loading, setLoading] = useState(false);
 
   const handleStatusChange = async (newStatus: 'active' | 'inactive') => {
-    if (newStatus === status) return;
+    if (newStatus === status) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -43,7 +44,6 @@ export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProp
       router.refresh();
     } catch (error) {
       console.error('Error updating tour status:', error);
-      alert('Failed to update tour status. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProp
       </Badge>
       <Select
         value={status}
-        onValueChange={(value) => handleStatusChange(value as 'active' | 'inactive')}
+        onValueChange={value => handleStatusChange(value as 'active' | 'inactive')}
         disabled={loading}
       >
         <SelectTrigger className="w-32">
@@ -72,4 +72,3 @@ export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProp
     </div>
   );
 }
-

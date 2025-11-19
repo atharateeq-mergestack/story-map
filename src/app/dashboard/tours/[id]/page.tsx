@@ -1,6 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { asc, eq } from 'drizzle-orm';
+import { ArrowLeftIcon, PlusIcon, UserIcon } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,12 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import Link from 'next/link';
-import { ArrowLeftIcon, PlusIcon, UserIcon } from 'lucide-react';
-import { notFound } from 'next/navigation';
 import { db } from '@/db';
-import { tours, destinations } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { destinations, tours } from '@/db/schema';
 
 async function getTour(id: string) {
   try {
@@ -148,107 +148,123 @@ export default async function TourDetailsPage({
             </div>
           </CardHeader>
           <CardContent>
-            {destinations.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-4">
-                  <p className="text-lg text-muted-foreground">
-                    No destinations yet. Add your first destination.
-                  </p>
-                  <Link href={`/dashboard/tours/${id}/destinations/new`}>
-                    <Button>Add Destination</Button>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time Slot</TableHead>
-                    <TableHead>Coordinates</TableHead>
-                    <TableHead>Images</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {destinations.map((destination: {
-                    id: string;
-                    name: string;
-                    date: string;
-                    timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
-                    coordinate: { lat: number; lng: number } | null;
-                    images: string[];
-                  }) => (
-                    <TableRow key={destination.id}>
-                      <TableCell className="font-medium">
-                        {destination.name}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(destination.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {destination.timeSlot ? (
-                          <div className="text-sm">
-                            <div>
-                              {destination.timeSlot.start_time} -{' '}
-                              {destination.timeSlot.end_time}
-                            </div>
-                            {destination.timeSlot.slot_label && (
-                              <div className="text-muted-foreground">
-                                {destination.timeSlot.slot_label}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {destination.coordinate ? (
-                          <div className="text-sm">
-                            {destination.coordinate.lat.toFixed(4)},{' '}
-                            {destination.coordinate.lng.toFixed(4)}
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {destination.images && destination.images.length > 0 ? (
-                          <div className="flex gap-2">
-                            {destination.images.slice(0, 3).map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={img}
-                                alt={`${destination.name} ${idx + 1}`}
-                                className="size-10 rounded object-cover"
-                              />
-                            ))}
-                            {destination.images.length > 3 && (
-                              <div className="flex size-10 items-center justify-center rounded bg-muted text-xs">
-                                +{destination.images.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            {destinations.length === 0
+              ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <p className="text-lg text-muted-foreground">
+                        No destinations yet. Add your first destination.
+                      </p>
+                      <Link href={`/dashboard/tours/${id}/destinations/new`}>
+                        <Button>Add Destination</Button>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time Slot</TableHead>
+                        <TableHead>Coordinates</TableHead>
+                        <TableHead>Images</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {destinations.map((destination: {
+                        id: string;
+                        tourId: string;
+                        name: string;
+                        date: string;
+                        timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
+                        images: string[] | null;
+                        coordinate: { lat: number; lng: number } | null;
+                        createdAt: Date;
+                        updatedAt: Date;
+                      }) => (
+                        <TableRow key={destination.id}>
+                          <TableCell className="font-medium">
+                            {destination.name}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(destination.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {destination.timeSlot
+                              ? (
+                                  <div className="text-sm">
+                                    <div>
+                                      {destination.timeSlot.start_time}
+                                      {' '}
+                                      -
+                                      {' '}
+                                      {destination.timeSlot.end_time}
+                                    </div>
+                                    {destination.timeSlot.slot_label && (
+                                      <div className="text-muted-foreground">
+                                        {destination.timeSlot.slot_label}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              : (
+                                  '-'
+                                )}
+                          </TableCell>
+                          <TableCell>
+                            {destination.coordinate
+                              ? (
+                                  <div className="text-sm">
+                                    {destination.coordinate.lat.toFixed(4)}
+                                    ,
+                                    {' '}
+                                    {destination.coordinate.lng.toFixed(4)}
+                                  </div>
+                                )
+                              : (
+                                  '-'
+                                )}
+                          </TableCell>
+                          <TableCell>
+                            {destination.images && destination.images.length > 0
+                              ? (
+                                  <div className="flex gap-2">
+                                    {(destination.images || []).slice(0, 3).map((img, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={img}
+                                        alt={`${destination.name} ${idx + 1}`}
+                                        className="size-10 rounded object-cover"
+                                      />
+                                    ))}
+                                    {destination.images.length > 3 && (
+                                      <div className="flex size-10 items-center justify-center rounded bg-muted text-xs">
+                                        +
+                                        {destination.images.length - 3}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              : (
+                                  '-'
+                                )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm">
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-

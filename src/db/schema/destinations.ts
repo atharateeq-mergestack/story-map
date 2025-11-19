@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uuid, varchar, text, date, jsonb } from 'drizzle-orm/pg-core';
+import { date, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tours } from './tours';
 
 export const destinations = pgTable('destinations', {
@@ -25,4 +25,3 @@ export const destinations = pgTable('destinations', {
 
 export type Destination = typeof destinations.$inferSelect;
 export type NewDestination = typeof destinations.$inferInsert;
-

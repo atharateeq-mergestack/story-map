@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { destinations } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 // GET - Get a single destination by ID
 export async function GET(
@@ -108,4 +109,3 @@ export async function DELETE(
     );
   }
 }
-

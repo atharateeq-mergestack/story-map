@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uuid, varchar, text, pgEnum, jsonb, date } from 'drizzle-orm/pg-core';
+import { date, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const tourStatusEnum = pgEnum('tour_status', ['active', 'inactive']);
 
@@ -24,4 +24,3 @@ export const tours = pgTable('tours', {
 
 export type Tour = typeof tours.$inferSelect;
 export type NewTour = typeof tours.$inferInsert;
-

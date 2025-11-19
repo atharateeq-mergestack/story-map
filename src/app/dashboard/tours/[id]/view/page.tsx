@@ -1,5 +1,9 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { asc, eq } from 'drizzle-orm';
+import { ArrowLeftIcon } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -8,12 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import Link from 'next/link';
-import { ArrowLeftIcon } from 'lucide-react';
-import { notFound } from 'next/navigation';
 import { db } from '@/db';
-import { tours, destinations } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { destinations, tours } from '@/db/schema';
 
 async function getTour(id: string) {
   try {
@@ -82,7 +82,10 @@ export default async function ViewAsUserPage({
           </Link>
           <div>
             <h1 className="text-3xl font-bold">{tour.name}</h1>
-            <p className="text-muted-foreground mt-1">Tour ID: {tour.id}</p>
+            <p className="text-muted-foreground mt-1">
+              Tour ID:
+              {tour.id}
+            </p>
           </div>
         </div>
 
@@ -131,94 +134,100 @@ export default async function ViewAsUserPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {destinations.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <p className="text-lg text-muted-foreground">
-                  No destinations available for this tour.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {Object.entries(destinationsByDate)
-                  .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-                  .map(([date, dateDestinations]) => (
-                    <div key={date} className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        {new Date(date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Destination Name</TableHead>
-                            <TableHead>Time Slot</TableHead>
-                            <TableHead>Latitude</TableHead>
-                            <TableHead>Longitude</TableHead>
-                            <TableHead>Description</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {dateDestinations.map((destination: {
-                            id: string;
-                            name: string;
-                            timeSlot: {
-                              start_time: string;
-                              end_time: string;
-                              slot_label?: string;
-                            } | null;
-                            coordinate: { lat: number; lng: number } | null;
-                            description: string | null;
-                          }) => (
-                            <TableRow key={destination.id}>
-                              <TableCell className="font-medium">
-                                {destination.name}
-                              </TableCell>
-                              <TableCell>
-                                {destination.timeSlot ? (
-                                  <div className="text-sm">
-                                    <div>
-                                      {destination.timeSlot.start_time} -{' '}
-                                      {destination.timeSlot.end_time}
-                                    </div>
-                                    {destination.timeSlot.slot_label && (
-                                      <div className="text-muted-foreground">
-                                        {destination.timeSlot.slot_label}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  '-'
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {destination.coordinate
-                                  ? destination.coordinate.lat.toFixed(6)
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                {destination.coordinate
-                                  ? destination.coordinate.lng.toFixed(6)
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                {destination.description || '-'}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ))}
-              </div>
-            )}
+            {destinations.length === 0
+              ? (
+                  <div className="flex items-center justify-center py-12">
+                    <p className="text-lg text-muted-foreground">
+                      No destinations available for this tour.
+                    </p>
+                  </div>
+                )
+              : (
+                  <div className="space-y-8">
+                    {Object.entries(destinationsByDate)
+                      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+                      .map(([date, dateDestinations]) => (
+                        <div key={date} className="space-y-4">
+                          <h3 className="text-lg font-semibold">
+                            {new Date(date).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </h3>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Destination Name</TableHead>
+                                <TableHead>Time Slot</TableHead>
+                                <TableHead>Latitude</TableHead>
+                                <TableHead>Longitude</TableHead>
+                                <TableHead>Description</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {dateDestinations.map((destination: {
+                                id: string;
+                                name: string;
+                                timeSlot: {
+                                  start_time: string;
+                                  end_time: string;
+                                  slot_label?: string;
+                                } | null;
+                                coordinate: { lat: number; lng: number } | null;
+                                description: string | null;
+                              }) => (
+                                <TableRow key={destination.id}>
+                                  <TableCell className="font-medium">
+                                    {destination.name}
+                                  </TableCell>
+                                  <TableCell>
+                                    {destination.timeSlot
+                                      ? (
+                                          <div className="text-sm">
+                                            <div>
+                                              {destination.timeSlot.start_time}
+                                              {' '}
+                                              -
+                                              {' '}
+                                              {destination.timeSlot.end_time}
+                                            </div>
+                                            {destination.timeSlot.slot_label && (
+                                              <div className="text-muted-foreground">
+                                                {destination.timeSlot.slot_label}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )
+                                      : (
+                                          '-'
+                                        )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {destination.coordinate
+                                      ? destination.coordinate.lat.toFixed(6)
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {destination.coordinate
+                                      ? destination.coordinate.lng.toFixed(6)
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {destination.description || '-'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ))}
+                  </div>
+                )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-

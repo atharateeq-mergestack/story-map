@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { CheckCircleIcon, EyeIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -10,13 +11,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { EyeIcon, CheckCircleIcon } from 'lucide-react';
 
-interface TourActionsProps {
+type TourActionsProps = {
   tourId: string;
   currentStatus: 'active' | 'inactive';
   hasActiveTour: boolean;
-}
+};
 
 export function TourActions({
   tourId,
@@ -29,7 +29,9 @@ export function TourActions({
   const isDisabled = hasActiveTour && currentStatus !== 'active';
 
   const handleMarkAsActive = async () => {
-    if (currentStatus === 'active' || isDisabled) return;
+    if (currentStatus === 'active' || isDisabled) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -48,7 +50,6 @@ export function TourActions({
       router.refresh();
     } catch (error) {
       console.error('Error activating tour:', error);
-      alert('Failed to activate tour. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,4 +96,3 @@ export function TourActions({
     </TooltipProvider>
   );
 }
-

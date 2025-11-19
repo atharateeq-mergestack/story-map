@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { ArrowLeftIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -17,9 +20,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
-import { ArrowLeftIcon } from 'lucide-react';
 
 const destinationSchema = yup.object({
   name: yup.string().required('Destination name is required'),
@@ -43,7 +43,7 @@ export default function CreateDestinationPage() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<DestinationFormData>({
-    resolver: yupResolver(destinationSchema),
+    resolver: yupResolver(destinationSchema) as any,
     defaultValues: {
       name: '',
       date: '',
@@ -64,12 +64,12 @@ export default function CreateDestinationPage() {
     try {
       // Parse images from comma-separated string
       const images = data.images
-        ? data.images.split(',').map((url) => url.trim()).filter(Boolean)
+        ? data.images.split(',').map(url => url.trim()).filter(Boolean)
         : [];
 
       // Build time slot object if times are provided
-      const timeSlot =
-        data.startTime && data.endTime
+      const timeSlot
+        = data.startTime && data.endTime
           ? {
               start_time: data.startTime,
               end_time: data.endTime,
@@ -78,8 +78,8 @@ export default function CreateDestinationPage() {
           : null;
 
       // Build coordinate object if lat/lng are provided
-      const coordinate =
-        data.lat !== null && data.lng !== null
+      const coordinate
+        = data.lat !== null && data.lng !== null
           ? {
               lat: data.lat,
               lng: data.lng,
@@ -242,7 +242,7 @@ export default function CreateDestinationPage() {
                             value={field.value ?? ''}
                             onChange={(e) => {
                               const val = e.target.value;
-                              field.onChange(val ? parseFloat(val) : null);
+                              field.onChange(val ? Number.parseFloat(val) : null);
                             }}
                           />
                         </FormControl>
@@ -266,7 +266,7 @@ export default function CreateDestinationPage() {
                             value={field.value ?? ''}
                             onChange={(e) => {
                               const val = e.target.value;
-                              field.onChange(val ? parseFloat(val) : null);
+                              field.onChange(val ? Number.parseFloat(val) : null);
                             }}
                           />
                         </FormControl>
@@ -339,4 +339,3 @@ export default function CreateDestinationPage() {
     </div>
   );
 }
-

@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { ArrowLeftIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -16,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -24,9 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
-import { ArrowLeftIcon } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 const tourSchema = yup.object({
   name: yup.string().required('Tour name is required'),
@@ -46,11 +46,11 @@ export default function CreateTourPage() {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<TourFormData>({
-    resolver: yupResolver(tourSchema),
+    resolver: yupResolver(tourSchema) as any,
     defaultValues: {
       name: '',
-      description: '',
-      startDate: '',
+      description: undefined,
+      startDate: undefined,
       endDate: '',
       startLocation: '',
       endLocation: '',
@@ -264,4 +264,3 @@ export default function CreateTourPage() {
     </div>
   );
 }
-
