@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Heading } from '@/components/ui/common/Heading';
+import { Text } from '@/components/ui/common/Text';
 import { Env } from '@/libs/Env';
 import { TourMap } from './TourMap';
+import { DestinationDetailPanel } from './DestinationDetailPanel';
 
 type Destination = {
   id: string;
@@ -17,6 +20,7 @@ type Destination = {
   } | null;
   coordinate: { lat: number; lng: number } | null;
   description: string | null;
+  images?: string[];
 };
 
 type Tour = {
@@ -35,72 +39,120 @@ type TourViewProps = {
   dates: string[];
 };
 
+function calculateTotalDays(startDate: string | null, endDate: string | null): number {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1; // Include both start and end days
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function formatFullDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const [activeDate, setActiveDate] = useState<string | null>(dates[0] || null);
   const [activeDestinationId, setActiveDestinationId] = useState<string | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [activeDayIndex, setActiveDayIndex] = useState(0);
+  
+  const heroRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const daySectionRefs = useRef<Record<string, HTMLDivElement>>({});
   const destinationRefs = useRef<Record<string, HTMLDivElement>>({});
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mapboxToken = Env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
   // Flatten all destinations for the map
   const allDestinations = dates.flatMap(date => destinationsByDate[date] || []);
 
-  // Scroll to destination when clicked
-  const handleDestinationClick = (destinationId: string) => {
-    const element = destinationRefs.current[destinationId];
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const totalDays = calculateTotalDays(tour.startDate, tour.endDate);
+
+  // Handle scroll to detect which day section is in view
+  useEffect(() => {
+    const handleScroll = () => {
+      // Detect which day section is in view
+      let currentActiveIndex = 0;
+      for (let i = 0; i < dates.length; i++) {
+        const section = daySectionRefs.current[dates[i]];
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 100) {
+            currentActiveIndex = i;
+          }
+        }
+      }
+      setActiveDayIndex(currentActiveIndex);
+      setActiveDate(dates[currentActiveIndex] || null);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [dates]);
+
+  // Handle destination click - open detail panel
+  const handleDestinationClick = (destination: Destination) => {
+    setSelectedDestination(destination);
+    setActiveDestinationId(destination.id);
+    // Ensure the active date matches the destination's date
+    setActiveDate(destination.date);
+  };
+
+  // Handle marker click from map
+  const handleMarkerClick = (destinationId: string) => {
+    const destination = allDestinations.find(d => d.id === destinationId);
+    if (destination) {
+      setSelectedDestination(destination);
+      setActiveDestinationId(destinationId);
+      // Ensure the active date matches the destination's date
+      setActiveDate(destination.date);
+      // Scroll to the day section for this destination
+      const section = daySectionRefs.current[destination.date];
+      if (section) {
+        const navHeight = navRef.current?.offsetHeight || 0;
+        const elementPosition = section.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({
+          top: elementPosition - navHeight - 20,
+          behavior: 'smooth',
+        });
+      }
     }
   };
 
-  // Handle scroll to detect which destination is in view
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) {
-      return;
-    }
-
-    const handleScroll = () => {
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const viewportCenter = containerRect.top + containerRect.height / 2;
-
-      // Find which destination card is closest to the center
-      let closestDestination: { id: string; distance: number } | null = null;
-
-      for (const [destinationId, element] of Object.entries(destinationRefs.current)) {
-        const rect = element.getBoundingClientRect();
-        const elementCenter = rect.top + rect.height / 2;
-        const distance = Math.abs(viewportCenter - elementCenter);
-
-        if (!closestDestination || distance < closestDestination.distance) {
-          closestDestination = { id: destinationId, distance };
-        }
-      }
-
-      if (closestDestination) {
-        setActiveDestinationId(closestDestination.id);
-        const destination = allDestinations.find(d => d.id === closestDestination!.id);
-        if (destination) {
-          setActiveDate(destination.date);
-        }
-      }
-    };
-
-    scrollContainer.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-
-    return () => scrollContainer.removeEventListener('scroll', handleScroll);
-  }, [allDestinations]);
+  // Handle back to overview
+  const handleBackToOverview = () => {
+    setSelectedDestination(null);
+    setActiveDestinationId(null);
+  };
 
   // Scroll to date section when date is clicked
   const handleDateClick = (date: string) => {
-    const firstDestination = destinationsByDate[date]?.[0];
-    if (firstDestination) {
-      const element = destinationRefs.current[firstDestination.id];
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setActiveDate(date);
-      }
+    const section = daySectionRefs.current[date];
+    if (section) {
+      const navHeight = navRef.current?.offsetHeight || 0;
+      const elementPosition = section.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: elementPosition - navHeight - 20,
+        behavior: 'smooth',
+      });
+      setActiveDate(date);
     }
   };
 
@@ -114,24 +166,11 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           <p className="text-sm text-muted-foreground">
             Please set NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN in your environment variables.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Use a public access token (pk.*) from
-            {' '}
-            <a
-              href="https://account.mapbox.com/access-tokens/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              mapbox.com
-            </a>
-          </p>
         </div>
       </div>
     );
   }
 
-  // Validate token format
   if (!mapboxToken.startsWith('pk.')) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -140,19 +179,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
             Invalid Mapbox token format
           </p>
           <p className="text-sm text-muted-foreground">
-            Use a public access token (pk.*) with Mapbox GL, not a secret access token (sk.*).
-          </p>
-          <p className="text-xs text-muted-foreground">
-            See
-            {' '}
-            <a
-              href="https://docs.mapbox.com/api/overview/#access-tokens-and-token-scopes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              Mapbox documentation
-            </a>
+            Use a public access token (pk.*) with Mapbox GL.
           </p>
         </div>
       </div>
@@ -161,141 +188,210 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <div>
-            <h1 className="text-2xl font-bold">{tour.name}</h1>
+      {/* Hero Section */}
+      <section
+        ref={heroRef}
+        className="relative min-h-[60vh] flex flex-col justify-end bg-muted/30"
+      >
+        {/* Background Image Placeholder */}
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-background/80" />
+
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto px-4 pb-8 pt-24">
+          <div className="max-w-3xl space-y-6">
+            <Heading level={1} size="5xl" weight="bold" className="text-foreground">
+              {tour.name}
+            </Heading>
+
             {tour.description && (
-              <p className="text-sm text-muted-foreground">{tour.description}</p>
+              <Text size="lg" color="muted" className="max-w-2xl">
+                {tour.description}
+              </Text>
             )}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {tour.startLocation && (
-              <span>
-                From:
-                {' '}
-                {tour.startLocation}
-              </span>
-            )}
-            {tour.endLocation && (
-              <span>
-                To:
-                {' '}
-                {tour.endLocation}
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
 
-      {/* Day Navigation */}
-      {dates.length > 0 && (
-        <nav className="sticky top-16 z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-          <div className="container flex h-14 items-center gap-2 overflow-x-auto px-4">
-            {dates.map(date => (
-              <Button
-                key={date}
-                variant={activeDate === date ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleDateClick(date)}
-                className="whitespace-nowrap"
-              >
-                {new Date(date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </Button>
-            ))}
-          </div>
-        </nav>
-      )}
-
-      {/* Main Content - Split View */}
-      <div className="flex h-[calc(100vh-8rem)]">
-        {/* Left Side - Destinations (20%) */}
-        <div ref={scrollContainerRef} className="w-1/5 overflow-y-auto border-r bg-muted/30">
-          <div className="p-4 space-y-4">
-            {dates.map((date) => {
-              const dayDestinations = destinationsByDate[date] || [];
-              return (
-                <div key={date} className="space-y-3">
-                  <h3 className="text-lg font-semibold sticky top-0 bg-background py-2 z-10">
-                    {new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </h3>
-                  {dayDestinations.map(destination => (
-                    <Card
-                      key={destination.id}
-                      ref={(el) => {
-                        if (el) {
-                          destinationRefs.current[destination.id] = el;
-                        }
-                      }}
-                      className={`cursor-pointer transition-all ${
-                        activeDestinationId === destination.id
-                          ? 'ring-2 ring-primary shadow-lg'
-                          : ''
-                      }`}
-                      onClick={() => handleDestinationClick(destination.id)}
-                    >
-                      <CardContent className="p-4">
-                        <h4 className="font-semibold mb-2">{destination.name}</h4>
-                        {destination.timeSlot && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {destination.timeSlot.start_time}
-                            {' '}
-                            -
-                            {' '}
-                            {destination.timeSlot.end_time}
-                            {destination.timeSlot.slot_label && (
-                              <>
-                                {' '}
-                                (
-                                {destination.timeSlot.slot_label}
-                                )
-                              </>
-                            )}
-                          </p>
-                        )}
-                        {destination.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {destination.description}
-                          </p>
-                        )}
-                        {destination.coordinate && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            📍
-                            {' '}
-                            {destination.coordinate.lat.toFixed(6)}
-                            ,
-                            {' '}
-                            {destination.coordinate.lng.toFixed(6)}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              {tour.startLocation && tour.endLocation && (
+                <div className="flex items-center gap-2">
+                  <Text weight="medium">Going from</Text>
+                  <Text color="muted">{tour.startLocation}</Text>
+                  <Text color="muted">→</Text>
+                  <Text weight="medium">Going to</Text>
+                  <Text color="muted">{tour.endLocation}</Text>
                 </div>
-              );
-            })}
+              )}
+
+              {tour.startDate && tour.endDate && (
+                <div className="flex items-center gap-4">
+                  <div>
+                    <Text size="sm" color="muted">Start Date</Text>
+                    <Text weight="medium">
+                      {new Date(tour.startDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </div>
+                  <div>
+                    <Text size="sm" color="muted">End Date</Text>
+                    <Text weight="medium">
+                      {new Date(tour.endDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </div>
+                  {totalDays > 0 && (
+                    <div>
+                      <Text size="sm" color="muted">Total Days</Text>
+                      <Text weight="medium">{totalDays} {totalDays === 1 ? 'Day' : 'Days'}</Text>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Side - Map (80%) */}
-        <div className="w-4/5 relative">
-          <TourMap
-            destinations={allDestinations}
-            activeDestinationId={activeDestinationId}
-            mapboxAccessToken={mapboxToken}
-          />
-        </div>
+        {/* Days Navigation - Always sticky at top */}
+        {dates.length > 0 && (
+          <nav
+            ref={navRef}
+            className="sticky top-0 z-20 w-full border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
+          >
+            <div className="container mx-auto px-4">
+              <div className="flex h-16 items-center gap-2 overflow-x-auto">
+                {dates.map((date, index) => (
+                  <Button
+                    key={date}
+                    variant={activeDate === date ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleDateClick(date)}
+                    className="whitespace-nowrap"
+                  >
+                    {formatDate(date)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </nav>
+        )}
+      </section>
+
+      {/* Day Sections */}
+      <div className="container mx-auto px-4 py-8">
+        {dates.map((date, dayIndex) => {
+          const dayDestinations = destinationsByDate[date] || [];
+          const dayNumber = dayIndex + 1;
+
+          return (
+            <section
+              key={date}
+              ref={(el) => {
+                if (el) {
+                  daySectionRefs.current[date] = el;
+                }
+              }}
+              className="mb-16"
+            >
+              {/* Day Section Title */}
+              <Heading level={2} size="2xl" weight="bold" className="mb-6">
+                Day {dayNumber} – {formatFullDate(date)}
+              </Heading>
+
+              {/* Split Layout: Destinations/Detail (30%) | Map (70%) */}
+              <div className="flex gap-6">
+                {/* Left: Destinations List or Detail Panel (30%) */}
+                <div className="w-[30%]">
+                  {selectedDestination && selectedDestination.date === date ? (
+                    <div className="sticky top-20">
+                      <DestinationDetailPanel
+                        destination={selectedDestination}
+                        onClose={handleBackToOverview}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {dayDestinations.length === 0 ? (
+                        <Card>
+                          <CardContent className="p-6 text-center">
+                            <Text color="muted">No destinations for this day</Text>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        dayDestinations.map((destination) => (
+                          <Card
+                            key={destination.id}
+                            ref={(el) => {
+                              if (el) {
+                                destinationRefs.current[destination.id] = el;
+                              }
+                            }}
+                            className={`cursor-pointer transition-all ${
+                              activeDestinationId === destination.id
+                                ? 'ring-2 ring-primary shadow-lg'
+                                : ''
+                            }`}
+                            onClick={() => handleDestinationClick(destination)}
+                          >
+                            <CardContent className="p-4">
+                              <Heading level={4} size="base" weight="semibold" className="mb-2">
+                                {destination.name}
+                              </Heading>
+                              {destination.timeSlot && (
+                                <Text size="sm" color="muted" className="mb-2">
+                                  {destination.timeSlot.start_time}
+                                  {' '}
+                                  -
+                                  {' '}
+                                  {destination.timeSlot.end_time}
+                                  {destination.timeSlot.slot_label && (
+                                    <>
+                                      {' '}
+                                      (
+                                      {destination.timeSlot.slot_label}
+                                      )
+                                    </>
+                                  )}
+                                </Text>
+                              )}
+                              {destination.description && (
+                                <Text size="sm" color="muted" lineClamp={2}>
+                                  {destination.description}
+                                </Text>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Map View (70%) - Sticky until all destinations scrolled */}
+                <div className="w-[70%] relative">
+                  <div
+                    className="sticky top-20"
+                    style={{
+                      height: 'calc(100vh - 8rem)',
+                      minHeight: '600px',
+                    }}
+                  >
+                    <TourMap
+                      destinations={dayDestinations}
+                      activeDestinationId={activeDestinationId}
+                      mapboxAccessToken={mapboxToken}
+                      onMarkerClick={handleMarkerClick}
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })}
       </div>
+
     </div>
   );
 }

@@ -20,12 +20,14 @@ type TourMapProps = {
   destinations: Destination[];
   activeDestinationId: string | null;
   mapboxAccessToken: string;
+  onMarkerClick?: (destinationId: string) => void;
 };
 
 export function TourMap({
   destinations,
   activeDestinationId,
   mapboxAccessToken,
+  onMarkerClick,
 }: TourMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -129,6 +131,13 @@ export function TourMap({
           ),
         )
         .addTo(map.current!);
+
+      // Add click handler to marker
+      el.addEventListener('click', () => {
+        if (onMarkerClick) {
+          onMarkerClick(destination.id);
+        }
+      });
 
       markersRef.current.push(marker);
 
