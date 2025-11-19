@@ -1,7 +1,8 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { ArrowLeftIcon, PlusIcon, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { DestinationActions } from '@/components/dashboard/DestinationActions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,7 @@ async function getTour(id: string) {
     const tour = await db
       .select()
       .from(tours)
-      .where(eq(tours.id, id))
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
       .limit(1);
     return tour[0] || null;
   } catch (error) {
@@ -35,7 +36,7 @@ async function getDestinations(tourId: string) {
     const tourDestinations = await db
       .select()
       .from(destinations)
-      .where(eq(destinations.tourId, tourId))
+      .where(and(eq(destinations.tourId, tourId), eq(destinations.isDeleted, false)))
       .orderBy(asc(destinations.date), asc(destinations.createdAt));
     return tourDestinations;
   } catch (error) {
@@ -253,9 +254,10 @@ export default async function TourDetailsPage({
                                 )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
+                            <DestinationActions
+                              destinationId={destination.id}
+                              destinationName={destination.name}
+                            />
                           </TableCell>
                         </TableRow>
                       ))}

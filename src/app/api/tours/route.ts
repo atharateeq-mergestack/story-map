@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
@@ -10,6 +10,7 @@ export async function GET() {
     const allTours = await db
       .select()
       .from(tours)
+      .where(eq(tours.isDeleted, false))
       .orderBy(desc(tours.createdAt));
 
     return NextResponse.json({ tours: allTours }, { status: 200 });
@@ -44,12 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If setting tour as active, deactivate all other tours
+    // If setting tour as active, deactivate all other non-deleted tours
     if (status === 'active') {
       await db
         .update(tours)
         .set({ status: 'inactive' })
-        .where(eq(tours.status, 'active'));
+        .where(and(eq(tours.status, 'active'), eq(tours.isDeleted, false)));
     }
 
     // Create history entry

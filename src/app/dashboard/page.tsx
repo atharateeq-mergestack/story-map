@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { BulkUploadButton } from '@/components/dashboard/BulkUploadButton';
@@ -23,6 +23,7 @@ async function getTours() {
     const allTours = await db
       .select()
       .from(tours)
+      .where(eq(tours.isDeleted, false))
       .orderBy(desc(tours.createdAt));
     return allTours;
   } catch (error) {
@@ -31,22 +32,22 @@ async function getTours() {
   }
 }
 
-async function hasActiveTour() {
+async function getActiveTourId() {
   try {
     const activeTour = await db
-      .select()
+      .select({ id: tours.id })
       .from(tours)
-      .where(eq(tours.status, 'active'))
+      .where(and(eq(tours.status, 'active'), eq(tours.isDeleted, false)))
       .limit(1);
-    return activeTour.length > 0;
+    return activeTour[0]?.id || null;
   } catch {
-    return false;
+    return null;
   }
 }
 
 export default async function DashboardPage() {
   const allTours = await getTours();
-  const hasActive = await hasActiveTour();
+  const activeTourId = await getActiveTourId();
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -151,7 +152,7 @@ export default async function DashboardPage() {
                             <TourActions
                               tourId={tour.id}
                               currentStatus={tour.status}
-                              hasActiveTour={hasActive}
+                              activeTourId={activeTourId}
                             />
                           </TableCell>
                         </TableRow>

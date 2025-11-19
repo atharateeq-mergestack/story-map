@@ -1,8 +1,9 @@
 import type { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
+import { createClient } from '@/lib/supabase/server';
 
 // GET - Get a single tour by ID
 export async function GET(
@@ -11,7 +12,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const tour = await db.select().from(tours).where(eq(tours.id, id)).limit(1);
+    const tour = await db
+      .select()
+      .from(tours)
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
+      .limit(1);
 
     if (tour.length === 0) {
       return NextResponse.json({ error: 'Tour not found' }, { status: 404 });
@@ -41,7 +46,7 @@ export async function PATCH(
     const currentTour = await db
       .select()
       .from(tours)
-      .where(eq(tours.id, id))
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
       .limit(1);
 
     if (currentTour.length === 0) {
@@ -51,12 +56,12 @@ export async function PATCH(
     const tour = currentTour[0];
     const updateData: typeof tours.$inferInsert = {};
 
-    // If setting tour as active, deactivate all other tours
+    // If setting tour as active, deactivate all other non-deleted tours
     if (status === 'active' && tour.status !== 'active') {
       await db
         .update(tours)
         .set({ status: 'inactive' })
-        .where(eq(tours.status, 'active'));
+        .where(and(eq(tours.status, 'active'), eq(tours.isDeleted, false)));
     }
 
     // Add history entry for status change
@@ -108,6 +113,71 @@ export async function PATCH(
     console.error('Error updating tour:', error);
     return NextResponse.json(
       { error: 'Failed to update tour' },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE - Soft delete a tour
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+
+    // Get current user for deletedBy
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 },
+      );
+    }
+
+    // Get current tour
+    const currentTour = await db
+      .select()
+      .from(tours)
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
+      .limit(1);
+
+    if (currentTour.length === 0) {
+      return NextResponse.json({ error: 'Tour not found' }, { status: 404 });
+    }
+
+    const tour = currentTour[0];
+
+    // Add history entry for deletion
+    const historyEntry = {
+      action: 'deleted',
+      timestamp: new Date().toISOString(),
+      notes: 'Tour soft deleted',
+      performed_by: user.id,
+    };
+
+    // Soft delete the tour
+    const deletedTour = await db
+      .update(tours)
+      .set({
+        isDeleted: true,
+        deletedBy: user.id,
+        history: [...(tour.history || []), historyEntry],
+        updatedAt: new Date(),
+      })
+      .where(eq(tours.id, id))
+      .returning();
+
+    return NextResponse.json(
+      { message: 'Tour deleted successfully', tour: deletedTour[0] },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error('Error deleting tour:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete tour' },
       { status: 500 },
     );
   }

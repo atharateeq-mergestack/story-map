@@ -24,7 +24,11 @@ export default {
   dialect: 'postgresql',
   dbCredentials: {
     url: process.env.DATABASE_URL!,
+    // Connection pool settings for migrations
+    // Use transaction mode for better connection management
+    ssl: process.env.DATABASE_URL?.includes('supabase') ? { rejectUnauthorized: false } : undefined,
   },
+  // Use a single connection for migrations to avoid pool issues
   verbose: true,
   strict: true,
 } satisfies Config;

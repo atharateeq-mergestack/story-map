@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
@@ -12,8 +12,12 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Verify tour exists
-    const tour = await db.select().from(tours).where(eq(tours.id, id)).limit(1);
+    // Verify tour exists and is not deleted
+    const tour = await db
+      .select()
+      .from(tours)
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
+      .limit(1);
     if (tour.length === 0) {
       return NextResponse.json({ error: 'Tour not found' }, { status: 404 });
     }
@@ -21,7 +25,7 @@ export async function GET(
     const tourDestinations = await db
       .select()
       .from(destinations)
-      .where(eq(destinations.tourId, id))
+      .where(and(eq(destinations.tourId, id), eq(destinations.isDeleted, false)))
       .orderBy(asc(destinations.date), asc(destinations.createdAt));
 
     return NextResponse.json(
@@ -63,8 +67,12 @@ export async function POST(
       );
     }
 
-    // Verify tour exists
-    const tour = await db.select().from(tours).where(eq(tours.id, id)).limit(1);
+    // Verify tour exists and is not deleted
+    const tour = await db
+      .select()
+      .from(tours)
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
+      .limit(1);
     if (tour.length === 0) {
       return NextResponse.json({ error: 'Tour not found' }, { status: 404 });
     }

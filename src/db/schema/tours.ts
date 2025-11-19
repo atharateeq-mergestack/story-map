@@ -1,4 +1,4 @@
-import { date, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, date, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const tourStatusEnum = pgEnum('tour_status', ['active', 'inactive']);
 
@@ -18,6 +18,8 @@ export const tours = pgTable('tours', {
     performed_by?: string;
   }>>().default([]),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
+  isDeleted: boolean('is_deleted').notNull().default(false),
+  deletedBy: uuid('deleted_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

@@ -1,4 +1,4 @@
-import { date, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, date, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tours } from './tours';
 
 export const destinations = pgTable('destinations', {
@@ -19,6 +19,8 @@ export const destinations = pgTable('destinations', {
   description: text('description'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   limits: jsonb('limits').$type<Record<string, unknown>>(),
+  isDeleted: boolean('is_deleted').notNull().default(false),
+  deletedBy: uuid('deleted_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
