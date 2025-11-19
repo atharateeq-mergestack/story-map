@@ -77,7 +77,7 @@ export default async function TourDetailsPage({
               )}
             </div>
           </div>
-          <Link href={`/dashboard/tours/${id}/view`}>
+          <Link href={`/tour/${id}`}>
             <Button>
               <UserIcon className="size-4" />
               View as User
