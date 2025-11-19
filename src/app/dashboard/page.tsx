@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
+import { BulkUploadButton } from '@/components/dashboard/BulkUploadButton';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { TourActions } from '@/components/dashboard/TourActions';
 import { Badge } from '@/components/ui/badge';
@@ -63,12 +64,15 @@ export default async function DashboardPage() {
                   Manage your tours and destinations
                 </CardDescription>
               </div>
-              <Link href="/dashboard/tours/new">
-                <Button>
-                  <PlusIcon className="size-4" />
-                  Create New Tour
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <BulkUploadButton />
+                <Link href="/dashboard/tours/new">
+                  <Button>
+                    <PlusIcon className="size-4" />
+                    Create New Tour
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

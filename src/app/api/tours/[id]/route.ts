@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 // GET - Get a single tour by ID
 export async function GET(
@@ -69,19 +70,30 @@ export async function PATCH(
     }
 
     // Update other fields
-    if (status) updateData.status = status;
-    if (otherUpdates.name) updateData.name = otherUpdates.name;
-    if (otherUpdates.description !== undefined)
+    if (status) {
+      updateData.status = status;
+    }
+    if (otherUpdates.name) {
+      updateData.name = otherUpdates.name;
+    }
+    if (otherUpdates.description !== undefined) {
       updateData.description = otherUpdates.description;
-    if (otherUpdates.startDate !== undefined)
+    }
+    if (otherUpdates.startDate !== undefined) {
       updateData.startDate = otherUpdates.startDate;
-    if (otherUpdates.endDate !== undefined)
+    }
+    if (otherUpdates.endDate !== undefined) {
       updateData.endDate = otherUpdates.endDate;
-    if (otherUpdates.startLocation !== undefined)
+    }
+    if (otherUpdates.startLocation !== undefined) {
       updateData.startLocation = otherUpdates.startLocation;
-    if (otherUpdates.endLocation !== undefined)
+    }
+    if (otherUpdates.endLocation !== undefined) {
       updateData.endLocation = otherUpdates.endLocation;
-    if (otherUpdates.metadata) updateData.metadata = otherUpdates.metadata;
+    }
+    if (otherUpdates.metadata) {
+      updateData.metadata = otherUpdates.metadata;
+    }
 
     updateData.updatedAt = new Date();
 
@@ -100,4 +112,3 @@ export async function PATCH(
     );
   }
 }
-

@@ -85,7 +85,11 @@
 10. **Use Drizzle ORM with Postgres for database operations.**
     - Database client: `@/db/index.ts` exports `db` instance
     - Schema files in `src/db/schema/` - export from `index.ts`
-    - Use Drizzle migrations: `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:push`
+    - **Schema changes: ONLY update schema files; NEVER run Drizzle commands.**
+      - When making schema changes, modify schema files directly in `src/db/schema/` (e.g., `profiles.ts`, `tours.ts`, `destinations.ts`)
+      - **DO NOT run** `pnpm db:generate`, `pnpm db:migrate`, or `pnpm db:push` commands
+      - These Drizzle commands (`pnpm db:generate`, `pnpm db:migrate`, `pnpm db:push`) are only to be run manually by the user when needed
+      - Cursor/AI should only update schema files, never execute migration commands
     - All database queries must be server-side only
     - Use prepared statements disabled for serverless: `prepare: false` in postgres client config
 

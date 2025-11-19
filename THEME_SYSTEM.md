@@ -127,11 +127,11 @@ Predefined heading styles for h1-h6 with responsive sizing.
 
 ```typescript
 {
-  mobile: '0px',        // Mobile devices
-  tablet: '768px',      // Tablets
-  desktop: '1024px',    // Desktop
-  'desktop-lg': '1280px',  // Large desktop
-  'desktop-xl': '1536px',  // Ultra-wide screens
+  mobile: '0px'; // Mobile devices
+  tablet: '768px'; // Tablets
+  desktop: '1024px'; // Desktop
+  desktopLg: '1280px'; // Large desktop
+  desktopXl: '1536px'; // Ultra-wide screens
 }
 ```
 
@@ -147,13 +147,17 @@ Predefined heading styles for h1-h6 with responsive sizing.
 
 ```tsx
 // Responsive padding
-<div className="p-4 md:p-6 lg:p-8 xl:p-10">
+<div className="p-4 md:p-6 lg:p-8 xl:p-10"> </div>;
+```
 
+```tsx
 // Responsive text
-<h1 className="text-2xl md:text-3xl lg:text-4xl">
+<h1 className="text-2xl md:text-3xl lg:text-4xl"> </h1>;
+```
 
+```tsx
 // Responsive grid
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> </div>;
 ```
 
 ## ⚙️ Theme Switching
@@ -174,7 +178,10 @@ function MyComponent() {
 
   return (
     <div>
-      <p>Current theme: {resolvedTheme}</p>
+      <p>
+        Current theme:
+        {resolvedTheme}
+      </p>
       <button onClick={toggleTheme}>Toggle Theme</button>
       <button onClick={() => setTheme('light')}>Light</button>
       <button onClick={() => setTheme('dark')}>Dark</button>
@@ -189,7 +196,7 @@ function MyComponent() {
 ```tsx
 import { ThemeToggle } from '@/components/ui/theme/ThemeToggle';
 
-<ThemeToggle />
+<ThemeToggle />;
 ```
 
 ## 📦 Reusable Components
@@ -282,7 +289,7 @@ import { Button } from '@/components/ui/button';
 The existing shadcn Card component uses theme variables:
 
 ```tsx
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 <Card>
   <CardHeader>
@@ -291,7 +298,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
   <CardContent>
     Card content
   </CardContent>
-</Card>
+</Card>;
 ```
 
 ### InputField Component
@@ -306,7 +313,7 @@ import { InputField } from '@/components/ui/input-field';
   type="email"
   error={errors.email?.message}
   required
-/>
+/>;
 ```
 
 ### Avatar Component
@@ -314,12 +321,12 @@ import { InputField } from '@/components/ui/input-field';
 The existing Avatar component uses theme variables:
 
 ```tsx
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 <Avatar>
   <AvatarImage src={user.avatar} />
   <AvatarFallback>JD</AvatarFallback>
-</Avatar>
+</Avatar>;
 ```
 
 ## 🖌️ Example Usage
@@ -329,10 +336,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 ```tsx
 'use client';
 
-import { Heading } from '@/components/ui/common';
-import { Text } from '@/components/ui/common';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Heading, Text } from '@/components/ui/common';
 import { ThemeToggle } from '@/components/ui/theme/ThemeToggle';
 
 export default function ExamplePage() {
@@ -434,4 +440,3 @@ All theme variables are available as Tailwind classes:
 - All transitions are smooth (150ms)
 - Typography scales responsively based on screen size
 - All colors are defined in OKLCH color space for better color consistency
-

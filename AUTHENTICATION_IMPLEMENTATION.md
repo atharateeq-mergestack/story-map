@@ -67,11 +67,11 @@ import { getServerUser } from '@/lib/supabase/server-auth';
 
 export default async function ProtectedPage() {
   const user = await getServerUser();
-  
+
   if (!user) {
     redirect('/');
   }
-  
+
   return <div>Protected content</div>;
 }
 ```
@@ -84,11 +84,11 @@ import { isAuthenticated } from '@/lib/supabase/server-auth';
 
 export default async function PublicPage() {
   const authenticated = await isAuthenticated();
-  
+
   if (authenticated) {
     redirect('/dashboard');
   }
-  
+
   return <div>Public content</div>;
 }
 ```
@@ -179,9 +179,9 @@ The `ProtectedLayout` component provides client-side protection:
 // Example: src/components/layout/ProtectedLayout.tsx
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 export function ProtectedLayout({ children }) {
   const { user, loading } = useAuth();
@@ -332,4 +332,3 @@ DATABASE_URL=your_database_url
 - Error messages are user-friendly and actionable
 - Loading states are handled throughout the application
 - TypeScript types are properly defined for all components
-
