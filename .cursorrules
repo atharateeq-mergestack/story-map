@@ -1,0 +1,187 @@
+# Project Guidelines
+
+## Package Management
+1. **Always use pnpm for package management; never npm or yarn.**
+   - Use `pnpm install`, `pnpm add`, `pnpm remove` commands
+   - Never use `npm` or `yarn` commands
+
+## Component Architecture
+2. **Every component should be created as a separate, reusable component and imported where needed.**
+   - Components should be self-contained and reusable
+   - Place components in appropriate directories:
+     - `src/components/ui/` - Base UI components (shadcn/ui pattern)
+     - `src/components/common/` - Shared/common components
+     - `src/components/[feature]/` - Feature-specific components (e.g., `auth/`, `dashboard/`, `profile/`)
+   - Use PascalCase for component file names (e.g., `SignInForm.tsx`)
+   - Export components as named exports
+
+3. **Avoid repetitive code; reuse shared logic and utilities wherever possible.**
+   - Extract common patterns into reusable utilities
+   - Use shared components like `InputField`, `Heading`, `Text` from `src/components/ui/common/`
+   - Leverage the `cn()` utility from `@/lib/utils` for className merging
+
+## Server-Side Architecture
+4. **Any logic that can be done on the server side (database queries, data processing, API calls) must be implemented on the server, not client-side.**
+   - Use Next.js Server Components by default
+   - Database queries must be in API routes (`src/app/api/`) or Server Components
+   - Use `'use client'` directive only when necessary (interactivity, hooks, browser APIs)
+   - Never import database clients or Supabase admin clients in client components
+
+5. **Ensure all API interactions are routed via server endpoints; no direct database access from client code.**
+   - All database operations go through API routes in `src/app/api/`
+   - Client components call API routes via `fetch()` to `/api/*` endpoints
+   - Use Supabase client-side only for auth operations that require client-side handling
+   - Server-side Supabase client: `@/lib/supabase/server`
+   - Admin Supabase client: `@/lib/supabase/admin` (server-only)
+
+## Project Structure & Naming Conventions
+6. **Maintain proper naming conventions and folder structure as per the current project style.**
+   - **Folder structure:**
+     - `src/app/` - Next.js App Router pages and API routes
+     - `src/components/` - React components organized by feature/type
+     - `src/lib/` - Utility functions, configurations, helpers
+     - `src/libs/` - Library configurations (e.g., `Env.ts`, `Logger.ts`)
+     - `src/hooks/` - Custom React hooks
+     - `src/store/` - State management controllers
+     - `src/db/` - Database schema and configuration
+     - `src/utils/` - Utility functions and helpers
+     - `src/actions/` - Server actions
+   - **Naming conventions:**
+     - Components: PascalCase (e.g., `SignInForm.tsx`, `DashboardHeader.tsx`)
+     - Hooks: camelCase with `use` prefix (e.g., `useAuth.ts`, `useProfile.ts`)
+     - Utilities: camelCase (e.g., `utils.ts`, `auth-utils.ts`)
+     - Controllers: camelCase with `Controller` suffix (e.g., `userController.ts`, `stateController.ts`)
+     - API routes: `route.ts` in `src/app/api/[feature]/route.ts`
+     - Schema files: camelCase with `.schema.ts` suffix (e.g., `signin.schema.ts`)
+
+## Theme System
+7. **Maintain multi-themed support: define colors, typography, spacing, and styles using the existing theme system.**
+   - Use CSS variables defined in theme system (`src/lib/theme/theme.config.ts`)
+   - Colors: Use semantic color tokens (e.g., `var(--color-primary)`, `var(--color-text-primary)`)
+   - Typography: Use theme typography tokens from `theme.config.ts`
+   - Spacing: Use theme spacing tokens or Tailwind spacing scale
+   - Use `ThemeProvider` and `ThemeToggle` components for theme switching
+   - Reference theme config at `@/lib/theme/theme.config.ts` for available tokens
+   - Use Tailwind classes that map to theme variables (e.g., `text-primary`, `bg-background`)
+
+## State Management
+8. **Use Jotai for state management with the StateController pattern.**
+   - Create state controllers extending `StateController` class from `@/store/stateController`
+   - Controllers should be singleton instances exported as default
+   - Use `useState()` method from controllers in components to subscribe to state
+   - Use `updateState()` to update state, `getValue()` to read state synchronously
+   - Example pattern: `src/store/userController.ts`
+   - Import Jotai store from `@/provider/jotai-provider`
+
+## Form Handling & Validation
+9. **Use React Hook Form with Yup for form validation.**
+   - Create validation schemas in `src/lib/validations/` with `.schema.ts` suffix
+   - Use `yupResolver` from `@hookform/resolvers/yup` for form validation
+   - Use shadcn/ui Form components (`Form`, `FormField`, `FormItem`, etc.)
+   - Export TypeScript types from schemas using `yup.InferType<typeof schema>`
+   - Example: `src/lib/validations/signin.schema.ts` and `src/components/auth/SignInForm.tsx`
+
+## Database & ORM
+10. **Use Drizzle ORM with Postgres for database operations.**
+    - Database client: `@/db/index.ts` exports `db` instance
+    - Schema files in `src/db/schema/` - export from `index.ts`
+    - Use Drizzle migrations: `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:push`
+    - All database queries must be server-side only
+    - Use prepared statements disabled for serverless: `prepare: false` in postgres client config
+
+## Authentication
+11. **Use Supabase for authentication with SSR pattern.**
+    - Server-side Supabase client: `createClient()` from `@/lib/supabase/server`
+    - Client-side Supabase client: `createClient()` from `@/lib/supabase/client` (when needed)
+    - Admin operations: `createAdminClient()` from `@/lib/supabase/admin` (server-only)
+    - Auth utilities: `@/lib/auth-utils.ts`
+    - Custom auth hook: `useAuth()` from `@/hooks/useAuth`
+    - Middleware handles auth route protection (`middleware.ts`)
+
+## TypeScript
+12. **Enforce TypeScript strict typing where applicable.**
+    - Follow strict TypeScript config from `tsconfig.json`
+    - Use proper types for all function parameters and return values
+    - Avoid `any` - use `unknown` for catch variables
+    - Use type inference where appropriate but be explicit for public APIs
+    - Export types alongside implementations
+    - Use path aliases: `@/*` maps to `./src/*`
+
+## Environment Variables
+13. **Use @t3-oss/env-nextjs for environment variable validation.**
+    - Define env schema in `src/libs/Env.ts`
+    - Separate `server`, `client`, and `shared` environment variables
+    - Use `Env` object to access validated environment variables
+    - Never access `process.env` directly (except in `Env.ts` runtimeEnv)
+
+## UI Components
+14. **Use shadcn/ui component patterns.**
+    - Base components in `src/components/ui/`
+    - Use Radix UI primitives as base
+    - Style with Tailwind CSS and theme variables
+    - Use `cn()` utility for className merging
+    - Components should accept standard HTML props via spread
+    - Use `displayName` for better debugging
+
+## API Route Patterns
+15. **Follow Next.js App Router API route conventions.**
+    - API routes in `src/app/api/[feature]/route.ts`
+    - Export named functions: `GET`, `POST`, `PUT`, `DELETE`, etc.
+    - Use `NextRequest` and `NextResponse` from `next/server`
+    - Return proper HTTP status codes
+    - Handle errors gracefully with try-catch
+    - Return JSON responses with consistent structure: `{ data?, error?, message? }`
+
+## Code Quality
+16. **Follow existing code patterns and conventions.**
+    - Use async/await for asynchronous operations
+    - Use descriptive variable and function names
+    - Add JSDoc comments for complex functions/components
+    - Keep functions focused and single-purpose
+    - Extract reusable logic into utilities or hooks
+
+## Import Organization
+17. **Organize imports consistently.**
+    - External packages first
+    - Internal imports with `@/` alias
+    - Relative imports last
+    - Group imports: React/Next.js, third-party, internal, relative
+    - Use type imports: `import type { ... }` for types only
+
+## Error Handling
+18. **Implement consistent error handling.**
+    - Use try-catch blocks for async operations
+    - Return meaningful error messages in API responses
+    - Display user-friendly error messages in UI
+    - Log errors appropriately (use Logger from `@/libs/Logger.ts` when available)
+
+## Performance
+19. **Optimize for performance.**
+    - Use Server Components by default
+    - Lazy load client components when appropriate
+    - Optimize images with Next.js Image component
+    - Use proper caching strategies for API routes
+    - Minimize client-side JavaScript bundle
+
+## Testing & Quality
+20. **Maintain code quality standards.**
+    - Follow ESLint configuration
+    - Use TypeScript strict mode
+    - Write self-documenting code
+    - Keep components and functions small and focused
+
+## Additional Patterns
+21. **Project-specific patterns:**
+    - Use `Heading` and `Text` components from `@/components/ui/common/` for typography
+    - Use `InputField` component for form inputs with labels and error states
+    - Use Card components for content containers
+    - Use Alert components for error/success messages
+    - Analytics: PostHog integration via `@/components/analytics/`
+    - Protected routes: Use `ProtectedLayout` component or middleware protection
+
+## Dynamic Rule Updates
+22. **This file should be updated when new patterns or project-specific best practices are detected.**
+    - Review codebase periodically for new patterns
+    - Add new conventions as they emerge
+    - Keep guidelines aligned with actual project implementation
+
