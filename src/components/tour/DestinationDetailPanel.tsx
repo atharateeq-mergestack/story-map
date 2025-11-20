@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heading } from '@/components/ui/common/Heading';
@@ -112,12 +113,14 @@ export function DestinationDetailPanel({
                 {destination.images.map(image => (
                   <div
                     key={image}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted"
+                    className="aspect-square rounded-lg overflow-hidden bg-muted relative"
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`${destination.name}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      unoptimized={image.includes('drive.google.com')}
                     />
                   </div>
                 ))}

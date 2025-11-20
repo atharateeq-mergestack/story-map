@@ -1,6 +1,7 @@
 'use client';
 
-import { TrashIcon } from 'lucide-react';
+import { EditIcon, TrashIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -16,11 +17,13 @@ import {
 type DestinationActionsProps = {
   destinationId: string;
   destinationName: string;
+  tourId: string;
 };
 
 export function DestinationActions({
   destinationId,
   destinationName,
+  tourId,
 }: DestinationActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -53,21 +56,39 @@ export function DestinationActions({
   return (
     <>
       <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDeleteDialogOpen(true)}
-              disabled={loading}
-            >
-              <TrashIcon className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Delete this destination</p>
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={`/dashboard/tours/${tourId}/destinations/${destinationId}/edit`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={loading}
+                >
+                  <EditIcon className="size-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit this destination</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteDialogOpen(true)}
+                disabled={loading}
+              >
+                <TrashIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete this destination</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </TooltipProvider>
 
       <ConfirmationDialog
@@ -84,4 +105,3 @@ export function DestinationActions({
     </>
   );
 }
-

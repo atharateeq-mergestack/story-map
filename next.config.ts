@@ -11,6 +11,21 @@ let baseConfig: NextConfig = {
   reactStrictMode: true,
   // Exclude import-in-the-middle from serverExternalPackages to fix version conflict warnings
   serverExternalPackages: [],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+        pathname: '/uc',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.googleusercontent.com',
+      },
+    ],
+    // Allow any image format
+    formats: ['image/avif', 'image/webp'],
+  },
 };
 
 // Conditionally enable bundle analysis

@@ -29,11 +29,16 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
+      const isGeoJSON = file.type === 'application/geo+json'
+        || file.type === 'application/json'
+        || file.name.endsWith('.geojson');
+
+      if (isCSV || isGeoJSON) {
         setSelectedFile(file);
       } else {
         toast.error('Invalid file type', {
-          description: 'Please select a CSV file',
+          description: 'Please select a CSV or GeoJSON file',
         });
         setSelectedFile(null);
       }
@@ -43,7 +48,7 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
   const handleUpload = async () => {
     if (!selectedFile) {
       toast.error('No file selected', {
-        description: 'Please select a CSV file to upload',
+        description: 'Please select a CSV or GeoJSON file to upload',
       });
       return;
     }
@@ -100,8 +105,9 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
         <DialogHeader>
           <DialogTitle>Bulk Upload Tours</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to create a tour with multiple destinations at once.
-            The first row should contain tour information, and subsequent rows should contain destination data.
+            Upload a CSV or GeoJSON file to create a tour with multiple destinations at once.
+            CSV: The first row should contain tour information, and subsequent rows should contain destination data.
+            GeoJSON: Each feature represents a destination with properties like Name, Day, Location, etc.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,7 +124,7 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
                 ref={fileInputRef}
                 id="csv-file"
                 type="file"
-                accept=".csv,text/csv"
+                accept=".csv,text/csv,.geojson,application/geo+json,application/json"
                 onChange={handleFileChange}
                 disabled={loading}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -137,7 +143,9 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Required columns: tour_name, destination_name, destination_date
+              CSV: Required columns: tour_name, destination_name, destination_date
+              <br />
+              GeoJSON: Each feature should have properties: Name, Day, Location, and geometry with coordinates
             </p>
           </div>
         </div>

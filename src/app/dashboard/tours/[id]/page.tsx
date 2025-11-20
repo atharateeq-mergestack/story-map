@@ -1,8 +1,21 @@
 import { and, asc, eq } from 'drizzle-orm';
-import { ArrowLeftIcon, PlusIcon, UserIcon } from 'lucide-react';
+import {
+  ArrowLeftIcon,
+  CalendarIcon,
+  ClockIcon,
+  EditIcon,
+  ImageIcon,
+  MapPinIcon,
+  NavigationIcon,
+  PlusIcon,
+  UserIcon,
+} from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { AnimatedTableRow } from '@/components/dashboard/AnimatedTableRow';
 import { DestinationActions } from '@/components/dashboard/DestinationActions';
+import { AnimatedWrapper } from '@/components/ui/animated';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,213 +72,301 @@ export default async function TourDetailsPage({
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeftIcon className="size-4" />
-                Back to Tours
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold">{tour.name}</h1>
-              {tour.description && (
-                <p className="text-muted-foreground mt-1">{tour.description}</p>
-              )}
-            </div>
-          </div>
-          <Link href={`/tour/${id}`}>
-            <Button>
-              <UserIcon className="size-4" />
-              View as User
-            </Button>
-          </Link>
-        </div>
-
-        {/* Tour Info Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <AnimatedWrapper direction="down" delay={0}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <ArrowLeftIcon className="size-4 mr-2" />
+                  Back to Tours
+                </Button>
+              </Link>
               <div>
-                <CardTitle>Tour Information</CardTitle>
-                <CardDescription>Tour details and status</CardDescription>
-              </div>
-              <Badge
-                variant={tour.status === 'active' ? 'default' : 'secondary'}
-              >
-                {tour.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="font-medium">
-                  {tour.startDate
-                    ? new Date(tour.startDate).toLocaleDateString()
-                    : '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">End Date</p>
-                <p className="font-medium">
-                  {tour.endDate
-                    ? new Date(tour.endDate).toLocaleDateString()
-                    : '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Start Location</p>
-                <p className="font-medium">{tour.startLocation || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">End Location</p>
-                <p className="font-medium">{tour.endLocation || '-'}</p>
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {tour.name}
+                </h1>
+                {tour.description && (
+                  <p className="text-muted-foreground mt-2 text-base">{tour.description}</p>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Destinations Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Destinations</CardTitle>
-                <CardDescription>
-                  All destinations for this tour
-                </CardDescription>
-              </div>
-              <Link href={`/dashboard/tours/${id}/destinations/new`}>
-                <Button>
-                  <PlusIcon className="size-4" />
-                  Add Destination
+            <div className="flex items-center gap-2">
+              <Link href={`/dashboard/tours/${id}/edit`}>
+                <Button
+                  variant="outline"
+                  className="shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <EditIcon className="size-4 mr-2" />
+                  Edit Tour
+                </Button>
+              </Link>
+              <Link href={`/tour/${id}`}>
+                <Button className="shadow-md hover:shadow-lg transition-all duration-300">
+                  <UserIcon className="size-4 mr-2" />
+                  View as User
                 </Button>
               </Link>
             </div>
-          </CardHeader>
-          <CardContent>
-            {destinations.length === 0
-              ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center space-y-4">
-                      <p className="text-lg text-muted-foreground">
-                        No destinations yet. Add your first destination.
-                      </p>
-                      <Link href={`/dashboard/tours/${id}/destinations/new`}>
-                        <Button>Add Destination</Button>
-                      </Link>
-                    </div>
+          </div>
+        </AnimatedWrapper>
+
+        {/* Tour Info Card */}
+        <AnimatedWrapper direction="up" delay={100}>
+          <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <NavigationIcon className="size-5 text-primary" />
+                    Tour Information
+                  </CardTitle>
+                  <CardDescription className="mt-1">Tour details and status</CardDescription>
+                </div>
+                <Badge
+                  variant={tour.status === 'active' ? 'default' : 'secondary'}
+                  className="shadow-sm text-sm px-3 py-1"
+                >
+                  {tour.status}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarIcon className="size-4 text-primary" />
+                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
                   </div>
-                )
-              : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time Slot</TableHead>
-                        <TableHead>Coordinates</TableHead>
-                        <TableHead>Images</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {destinations.map((destination: {
-                        id: string;
-                        tourId: string;
-                        name: string;
-                        date: string;
-                        timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
-                        images: string[] | null;
-                        coordinate: { lat: number; lng: number } | null;
-                        createdAt: Date;
-                        updatedAt: Date;
-                      }) => (
-                        <TableRow key={destination.id}>
-                          <TableCell className="font-medium">
-                            {destination.name}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(destination.date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {destination.timeSlot
-                              ? (
-                                  <div className="text-sm">
-                                    <div>
-                                      {destination.timeSlot.start_time}
-                                      {' '}
-                                      -
-                                      {' '}
-                                      {destination.timeSlot.end_time}
-                                    </div>
-                                    {destination.timeSlot.slot_label && (
-                                      <div className="text-muted-foreground">
-                                        {destination.timeSlot.slot_label}
+                  <p className="font-semibold text-lg">
+                    {tour.startDate
+                      ? new Date(tour.startDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : '-'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarIcon className="size-4 text-primary" />
+                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                  </div>
+                  <p className="font-semibold text-lg">
+                    {tour.endDate
+                      ? new Date(tour.endDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
+                      : '-'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPinIcon className="size-4 text-primary" />
+                    <p className="text-sm font-medium text-muted-foreground">Start Location</p>
+                  </div>
+                  <p className="font-semibold text-lg">{tour.startLocation || '-'}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPinIcon className="size-4 text-primary" />
+                    <p className="text-sm font-medium text-muted-foreground">End Location</p>
+                  </div>
+                  <p className="font-semibold text-lg">{tour.endLocation || '-'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimatedWrapper>
+
+        {/* Destinations Section */}
+        <AnimatedWrapper direction="up" delay={200}>
+          <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <MapPinIcon className="size-5 text-primary" />
+                    Destinations
+                    <Badge variant="secondary" className="ml-2">
+                      {destinations.length}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    All destinations for this tour
+                  </CardDescription>
+                </div>
+                <Link href={`/dashboard/tours/${id}/destinations/new`}>
+                  <Button className="shadow-md hover:shadow-lg transition-all duration-300">
+                    <PlusIcon className="size-4 mr-2" />
+                    Add Destination
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {destinations.length === 0
+                ? (
+                    <AnimatedWrapper direction="up" delay={300}>
+                      <div className="flex items-center justify-center py-16">
+                        <div className="text-center space-y-6 max-w-md">
+                          <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                            <MapPinIcon className="size-10 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">No destinations yet</h3>
+                            <p className="text-muted-foreground mb-6">
+                              Add your first destination to start building your tour itinerary.
+                            </p>
+                          </div>
+                          <Link href={`/dashboard/tours/${id}/destinations/new`}>
+                            <Button size="lg" className="shadow-md hover:shadow-lg transition-all duration-300">
+                              <PlusIcon className="size-4 mr-2" />
+                              Add Destination
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </AnimatedWrapper>
+                  )
+                : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="font-semibold">Name</TableHead>
+                            <TableHead className="font-semibold">Date</TableHead>
+                            <TableHead className="font-semibold">Time Slot</TableHead>
+                            <TableHead className="font-semibold">Coordinates</TableHead>
+                            <TableHead className="font-semibold">Images</TableHead>
+                            <TableHead className="text-right font-semibold">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {destinations.map((destination: {
+                            id: string;
+                            tourId: string;
+                            name: string;
+                            date: string;
+                            timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
+                            images: string[] | null;
+                            coordinate: { lat: number; lng: number } | null;
+                            createdAt: Date;
+                            updatedAt: Date;
+                          }, index: number) => (
+                            <AnimatedTableRow key={destination.id} index={index}>
+                              <TableCell className="font-semibold">
+                                {destination.name}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <CalendarIcon className="size-4 text-muted-foreground" />
+                                  <span>
+                                    {new Date(destination.date).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {destination.timeSlot
+                                  ? (
+                                      <div className="flex items-center gap-2">
+                                        <ClockIcon className="size-4 text-muted-foreground" />
+                                        <div className="text-sm">
+                                          <div className="font-medium">
+                                            {destination.timeSlot.start_time}
+                                            {' '}
+                                            -
+                                            {' '}
+                                            {destination.timeSlot.end_time}
+                                          </div>
+                                          {destination.timeSlot.slot_label && (
+                                            <div className="text-muted-foreground text-xs">
+                                              {destination.timeSlot.slot_label}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                              </TableCell>
+                              <TableCell>
+                                {destination.coordinate
+                                  ? (
+                                      <div className="flex items-center gap-2">
+                                        <NavigationIcon className="size-4 text-muted-foreground" />
+                                        <div className="text-sm font-mono">
+                                          {destination.coordinate.lat.toFixed(4)}
+                                          ,
+                                          {' '}
+                                          {destination.coordinate.lng.toFixed(4)}
+                                        </div>
+                                      </div>
+                                    )
+                                  : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                              </TableCell>
+                              <TableCell>
+                                {destination.images && destination.images.length > 0
+                                  ? (
+                                      <div className="flex gap-2">
+                                        {destination.images.slice(0, 3).map((img, idx) => (
+                                          <Image
+                                            key={`${destination.id}-${idx}`}
+                                            src={img}
+                                            alt={`${destination.name} ${idx + 1}`}
+                                            width={48}
+                                            height={48}
+                                            className="size-12 rounded-lg object-cover border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md"
+                                            unoptimized={img.includes('drive.google.com')}
+                                          />
+                                        ))}
+                                        {destination.images.length > 3 && (
+                                          <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xs font-semibold border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
+                                            +
+                                            {destination.images.length - 3}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  : (
+                                      <div className="flex items-center gap-2 text-muted-foreground">
+                                        <ImageIcon className="size-4" />
+                                        <span>-</span>
                                       </div>
                                     )}
-                                  </div>
-                                )
-                              : (
-                                  '-'
-                                )}
-                          </TableCell>
-                          <TableCell>
-                            {destination.coordinate
-                              ? (
-                                  <div className="text-sm">
-                                    {destination.coordinate.lat.toFixed(4)}
-                                    ,
-                                    {' '}
-                                    {destination.coordinate.lng.toFixed(4)}
-                                  </div>
-                                )
-                              : (
-                                  '-'
-                                )}
-                          </TableCell>
-                          <TableCell>
-                            {destination.images && destination.images.length > 0
-                              ? (
-                                  <div className="flex gap-2">
-                                    {(destination.images || []).slice(0, 3).map((img, idx) => (
-                                      <img
-                                        key={idx}
-                                        src={img}
-                                        alt={`${destination.name} ${idx + 1}`}
-                                        className="size-10 rounded object-cover"
-                                      />
-                                    ))}
-                                    {destination.images.length > 3 && (
-                                      <div className="flex size-10 items-center justify-center rounded bg-muted text-xs">
-                                        +
-                                        {destination.images.length - 3}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              : (
-                                  '-'
-                                )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DestinationActions
-                              destinationId={destination.id}
-                              destinationName={destination.name}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-          </CardContent>
-        </Card>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DestinationActions
+                                  destinationId={destination.id}
+                                  destinationName={destination.name}
+                                  tourId={id}
+                                />
+                              </TableCell>
+                            </AnimatedTableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+            </CardContent>
+          </Card>
+        </AnimatedWrapper>
       </div>
     </div>
   );
