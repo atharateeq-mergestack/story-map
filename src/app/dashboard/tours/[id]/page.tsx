@@ -14,6 +14,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AnimatedTableRow } from '@/components/dashboard/AnimatedTableRow';
+import { CopyLinkButton } from '@/components/dashboard/CopyLinkButton';
 import { DestinationActions } from '@/components/dashboard/DestinationActions';
 import { AnimatedWrapper } from '@/components/ui/animated';
 import { Badge } from '@/components/ui/badge';
@@ -108,12 +109,16 @@ export default async function TourDetailsPage({
                   Edit Tour
                 </Button>
               </Link>
-              <Link href={`/tour/${id}`}>
-                <Button className="shadow-md hover:shadow-lg transition-all duration-300">
+              <Link href={`/dashboard/tours/${id}/view`}>
+                <Button
+                  variant="outline"
+                  className="shadow-md hover:shadow-lg transition-all duration-300"
+                >
                   <UserIcon className="size-4 mr-2" />
                   View as User
                 </Button>
               </Link>
+              <CopyLinkButton tourId={id} isActive={tour.status === 'active'} />
             </div>
           </div>
         </AnimatedWrapper>
@@ -245,7 +250,7 @@ export default async function TourDetailsPage({
                           coordinate: { lat: number; lng: number } | null;
                           createdAt: Date;
                           updatedAt: Date;
-                        }, index: number) => (
+                        }) => (
                           <Card key={destination.id} className="border-2 hover:shadow-md transition-all">
                             <CardContent className="p-4 space-y-3">
                               <div className="flex items-start justify-between">
@@ -271,7 +276,10 @@ export default async function TourDetailsPage({
                                     <div>
                                       <p className="text-xs text-muted-foreground">Time</p>
                                       <p className="font-medium text-xs">
-                                        {destination.timeSlot.start_time} - {destination.timeSlot.end_time}
+                                        {destination.timeSlot.start_time}
+                                        {' '}
+                                        -
+                                        {destination.timeSlot.end_time}
                                       </p>
                                     </div>
                                   </div>
@@ -282,7 +290,9 @@ export default async function TourDetailsPage({
                                     <div>
                                       <p className="text-xs text-muted-foreground">Coordinates</p>
                                       <p className="font-mono text-xs">
-                                        {destination.coordinate.lat.toFixed(4)}, {destination.coordinate.lng.toFixed(4)}
+                                        {destination.coordinate.lat.toFixed(4)}
+                                        ,
+                                        {destination.coordinate.lng.toFixed(4)}
                                       </p>
                                     </div>
                                   </div>
@@ -293,18 +303,19 @@ export default async function TourDetailsPage({
                                 <div className="flex gap-2 pt-2 border-t">
                                   {destination.images.slice(0, 3).map((img, idx) => (
                                     <Image
+                                      // eslint-disable-next-line react/no-array-index-key
                                       key={`${destination.id}-${idx}`}
                                       src={img}
                                       alt={`${destination.name} ${idx + 1}`}
                                       width={48}
                                       height={48}
                                       className="size-12 rounded-lg object-cover border-2 border-border"
-                                      unoptimized={img.includes('drive.google.com')}
                                     />
                                   ))}
                                   {destination.images.length > 3 && (
                                     <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xs font-semibold border-2 border-border">
-                                      +{destination.images.length - 3}
+                                      +
+                                      {destination.images.length - 3}
                                     </div>
                                   )}
                                 </div>
@@ -405,7 +416,6 @@ export default async function TourDetailsPage({
                                               width={48}
                                               height={48}
                                               className="size-12 rounded-lg object-cover border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md"
-                                              unoptimized={img.includes('drive.google.com')}
                                             />
                                           ))}
                                           {destination.images.length > 3 && (

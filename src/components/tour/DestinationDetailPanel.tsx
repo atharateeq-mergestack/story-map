@@ -116,7 +116,6 @@ export function DestinationDetailPanel({
                       alt={`${destination.name}`}
                       fill
                       className="object-cover"
-                      unoptimized={image.includes('drive.google.com')}
                     />
                   </div>
                 ))}

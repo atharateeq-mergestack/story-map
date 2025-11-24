@@ -9,7 +9,7 @@ async function getTour(id: string) {
     const tour = await db
       .select()
       .from(tours)
-      .where(and(eq(tours.id, id), eq(tours.isDeleted, false), eq(tours.status, 'active')))
+      .where(and(eq(tours.id, id), eq(tours.isDeleted, false)))
       .limit(1);
     return tour[0] || null;
   } catch (error) {
@@ -39,11 +39,28 @@ export default async function TourPage({
 }) {
   const { id } = await params;
   const tour = await getTour(id);
-  const destinations = await getDestinations(id);
 
   if (!tour) {
     notFound();
   }
+
+  // Check if tour is active
+  if (tour.status !== 'active') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="p-6 rounded-lg border-2 border-muted bg-card">
+            <h1 className="text-2xl font-bold mb-2">Tour Inactive</h1>
+            <p className="text-muted-foreground">
+              This tour is currently inactive and cannot be viewed. Please contact the tour organizer for more information.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const destinations = await getDestinations(id);
 
   // Group destinations by date
   const destinationsByDate = destinations.reduce(

@@ -48,7 +48,7 @@ export default async function DashboardPage() {
           <AnimatedWrapper direction="down" delay={0}>
             <div className="flex flex-col md:flex-row items-start justify-between sm:gap-2">
               <DashboardHeader />
-              <div className="flex self-center justify-end">
+              <div className="flex self-center md:self-end justify-end mt-4 md:mt-0">
                 <DashboardActionsOnly />
               </div>
             </div>

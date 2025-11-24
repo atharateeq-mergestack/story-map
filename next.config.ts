@@ -12,17 +12,8 @@ let baseConfig: NextConfig = {
   // Exclude import-in-the-middle from serverExternalPackages to fix version conflict warnings
   serverExternalPackages: [],
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'drive.google.com',
-        pathname: '/uc',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.googleusercontent.com',
-      },
-    ],
+    // Allow all images from any domain without restrictions
+    unoptimized: true,
     // Allow any image format
     formats: ['image/avif', 'image/webp'],
   },
