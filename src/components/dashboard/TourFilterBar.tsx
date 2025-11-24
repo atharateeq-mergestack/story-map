@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -107,11 +108,11 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     <CalendarIcon className="size-4" />
                     Filter by Created Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id="filter-created-date"
-                    type="date"
                     value={filters.filterCreatedDate}
-                    onChange={e => handleFilterChange('filterCreatedDate', e.target.value)}
+                    onChange={value => handleFilterChange('filterCreatedDate', value)}
+                    placeholder="Select created date"
                   />
                 </div>
                 <div className="space-y-2">
@@ -119,11 +120,11 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     <CalendarIcon className="size-4" />
                     Filter by Start Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id="filter-start-date"
-                    type="date"
                     value={filters.filterStartDate}
-                    onChange={e => handleFilterChange('filterStartDate', e.target.value)}
+                    onChange={value => handleFilterChange('filterStartDate', value)}
+                    placeholder="Select start date"
                   />
                 </div>
                 <div className="space-y-2">
@@ -131,11 +132,11 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     <CalendarIcon className="size-4" />
                     Filter by End Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id="filter-end-date"
-                    type="date"
                     value={filters.filterEndDate}
-                    onChange={e => handleFilterChange('filterEndDate', e.target.value)}
+                    onChange={value => handleFilterChange('filterEndDate', value)}
+                    placeholder="Select end date"
                   />
                 </div>
               </div>

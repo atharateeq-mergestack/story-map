@@ -10,6 +10,7 @@ import * as yup from 'yup';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Form,
   FormControl,
@@ -163,9 +164,11 @@ export default function CreateDestinationPage() {
                     <FormItem>
                       <FormLabel>Date *</FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
+                        <DatePicker
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Select date"
+                          required
                         />
                       </FormControl>
                       <FormMessage />

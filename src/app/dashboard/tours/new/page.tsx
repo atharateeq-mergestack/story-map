@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -151,9 +152,10 @@ export default function CreateTourPage() {
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
+                          <DatePicker
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Select start date"
                           />
                         </FormControl>
                         <FormMessage />
@@ -168,9 +170,10 @@ export default function CreateTourPage() {
                       <FormItem>
                         <FormLabel>End Date</FormLabel>
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
+                          <DatePicker
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Select end date"
                           />
                         </FormControl>
                         <FormMessage />

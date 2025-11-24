@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -104,14 +105,12 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   <CalendarIcon className="size-3" />
                   Start Date
                 </Label>
-                <Input
+                <DatePicker
                   id="menu-filter-start-date"
-                  type="date"
                   value={filters.filterStartDate}
-                  onChange={e => handleFilterChange('filterStartDate', e.target.value)}
-                  className="w-full text-sm"
-                  onClick={e => e.stopPropagation()}
-                  onKeyDown={e => e.stopPropagation()}
+                  onChange={value => handleFilterChange('filterStartDate', value)}
+                  placeholder="Select start date"
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -119,14 +118,12 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   <CalendarIcon className="size-3" />
                   End Date
                 </Label>
-                <Input
+                <DatePicker
                   id="menu-filter-end-date"
-                  type="date"
                   value={filters.filterEndDate}
-                  onChange={e => handleFilterChange('filterEndDate', e.target.value)}
-                  className="w-full text-sm"
-                  onClick={e => e.stopPropagation()}
-                  onKeyDown={e => e.stopPropagation()}
+                  onChange={value => handleFilterChange('filterEndDate', value)}
+                  placeholder="Select end date"
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -134,14 +131,12 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   <CalendarIcon className="size-3" />
                   Created Date
                 </Label>
-                <Input
+                <DatePicker
                   id="menu-filter-created-date"
-                  type="date"
                   value={filters.filterCreatedDate}
-                  onChange={e => handleFilterChange('filterCreatedDate', e.target.value)}
-                  className="w-full text-sm"
-                  onClick={e => e.stopPropagation()}
-                  onKeyDown={e => e.stopPropagation()}
+                  onChange={value => handleFilterChange('filterCreatedDate', value)}
+                  placeholder="Select created date"
+                  className="w-full"
                 />
               </div>
             </div>
