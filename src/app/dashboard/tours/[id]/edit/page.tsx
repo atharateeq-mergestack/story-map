@@ -138,16 +138,16 @@ export default function EditTourPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-7 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 sm:p-6 md:p-8">
+      <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <Link href={`/dashboard/tours/${tourId}`}>
-            <Button variant="outline" size="sm" className="shadow-sm hover:shadow-md transition-all duration-300">
-              <ArrowLeftIcon className="size-4 mr-2" />
+            <Button variant="outline" size="sm" className="shadow-sm hover:shadow-md transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto">
+              <ArrowLeftIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
               Back to Tour
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">Edit Tour</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Edit Tour</h1>
         </div>
 
         <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -157,9 +157,9 @@ export default function EditTourPage() {
               Update the tour details
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -195,7 +195,7 @@ export default function EditTourPage() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="startDate"
@@ -231,7 +231,7 @@ export default function EditTourPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="startLocation"
@@ -298,12 +298,12 @@ export default function EditTourPage() {
                   </Alert>
                 )}
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Button type="submit" disabled={loading} className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
                     {loading ? 'Updating...' : 'Update Tour'}
                   </Button>
-                  <Link href={`/dashboard/tours/${tourId}`}>
-                    <Button type="button" variant="outline">
+                  <Link href={`/dashboard/tours/${tourId}`} className="flex-1 sm:flex-none">
+                    <Button type="button" variant="outline" className="w-full sm:w-auto">
                       Cancel
                     </Button>
                   </Link>

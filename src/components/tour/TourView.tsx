@@ -177,53 +177,53 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       {/* Hero Section */}
       <section
         ref={heroRef}
-        className="relative min-h-[60vh] flex flex-col justify-end bg-muted/30"
+        className="relative min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] flex flex-col justify-end bg-muted/30"
       >
         {/* Background Image Placeholder */}
-        <div className="absolute inset-0 bg-linear-to-b from-muted/50 to-background/80" />
+        {/* <div className="absolute inset-0 bg-linear-to-b from-muted/50 to-background/80" /> */}
 
         {/* Hero Content */}
-        <div className="relative z-10 container mx-auto px-4 pb-8 pt-24">
-          <div className="max-w-3xl space-y-6">
-            <Heading level={1} size="5xl" weight="bold" className="text-foreground">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 pb-6 sm:pb-8 pt-16 sm:pt-20 md:pt-24">
+          <div className="max-w-3xl space-y-4 sm:space-y-6">
+            <Heading level={1} size="5xl" weight="bold" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-foreground">
               {tour.name}
             </Heading>
 
             {tour.description && (
-              <Text size="lg" color="muted" className="max-w-2xl">
+              <Text size="lg" color="muted" className="text-sm sm:text-base md:text-lg max-w-2xl">
                 {tour.description}
               </Text>
             )}
 
-            <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 text-xs sm:text-sm">
               {tour.startLocation && tour.endLocation && (
-                <div className="flex items-center gap-2">
-                  <Text weight="medium">Going from</Text>
-                  <Text color="muted">{tour.startLocation}</Text>
-                  <Text color="muted">→</Text>
-                  <Text weight="medium">Going to</Text>
-                  <Text color="muted">{tour.endLocation}</Text>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Text weight="medium" className="text-xs sm:text-sm">Going from</Text>
+                  <Text color="muted" className="text-xs sm:text-sm">{tour.startLocation}</Text>
+                  <Text color="muted" className="text-xs sm:text-sm">→</Text>
+                  <Text weight="medium" className="text-xs sm:text-sm">Going to</Text>
+                  <Text color="muted" className="text-xs sm:text-sm">{tour.endLocation}</Text>
                 </div>
               )}
 
               {tour.startDate && tour.endDate && (
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <div>
-                    <Text size="sm" color="muted">Start Date</Text>
-                    <Text weight="medium">
+                    <Text size="sm" color="muted" className="text-xs">Start Date</Text>
+                    <Text weight="medium" className="text-xs sm:text-sm">
                       {formatDate(tour.startDate)}
                     </Text>
                   </div>
                   <div>
-                    <Text size="sm" color="muted">End Date</Text>
-                    <Text weight="medium">
+                    <Text size="sm" color="muted" className="text-xs">End Date</Text>
+                    <Text weight="medium" className="text-xs sm:text-sm">
                       {formatDate(tour.endDate)}
                     </Text>
                   </div>
                   {totalDays > 0 && (
                     <div>
-                      <Text size="sm" color="muted">Total Days</Text>
-                      <Text weight="medium">
+                      <Text size="sm" color="muted" className="text-xs">Total Days</Text>
+                      <Text weight="medium" className="text-xs sm:text-sm">
                         {totalDays}
                         {' '}
                         {totalDays === 1 ? 'Day' : 'Days'}
@@ -240,17 +240,17 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         {dates.length > 0 && (
           <nav
             ref={navRef}
-            className="sticky top-16 z-20 w-full border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
+            className="sticky top-14 sm:top-16 z-20 w-full border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
           >
-            <div className="container mx-auto px-4">
-              <div className="flex h-16 items-center gap-2 overflow-x-auto">
+            <div className="container mx-auto px-3 sm:px-4">
+              <div className="flex h-12 sm:h-14 md:h-16 items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
                 {dates.map(date => (
                   <Button
                     key={date}
                     variant={activeDate === date ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleDateClick(date)}
-                    className="whitespace-nowrap"
+                    className="whitespace-nowrap text-xs sm:text-sm shrink-0"
                   >
                     {formatDate(date)}
                   </Button>
@@ -262,7 +262,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       </section>
 
       {/* Day Sections */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {dates.map((date, dayIndex) => {
           const dayDestinations = destinationsByDate[date] || [];
           const dayNumber = dayIndex + 1;
@@ -275,10 +275,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                   daySectionRefs.current[date] = el;
                 }
               }}
-              className="mb-16"
+              className="mb-12 sm:mb-16"
             >
               {/* Day Section Title */}
-              <Heading level={2} size="2xl" weight="bold" className="mb-6">
+              <Heading level={2} size="2xl" weight="bold" className="mb-4 sm:mb-6 text-xl sm:text-2xl">
                 Day
                 {' '}
                 {dayNumber}
@@ -288,13 +288,13 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                 {formatDate(date)}
               </Heading>
 
-              {/* Split Layout: Destinations/Detail (30%) | Map (70%) */}
-              <div className="flex gap-6">
+              {/* Split Layout: Destinations/Detail (30%) | Map (70%) - Stack on mobile/tablet */}
+              <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                 {/* Left: Destinations List or Detail Panel (30%) */}
-                <div className="w-[30%]">
+                <div className="w-full lg:w-[30%] order-2 lg:order-1">
                   {selectedDestination && selectedDestination.date === date
                     ? (
-                        <div className="sticky top-20">
+                        <div className="sticky top-14 sm:top-20">
                           <DestinationDetailPanel
                             destination={selectedDestination}
                             onClose={handleBackToOverview}
@@ -302,12 +302,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                         </div>
                       )
                     : (
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           {dayDestinations.length === 0
                             ? (
                                 <Card>
-                                  <CardContent className="p-6 text-center">
-                                    <Text color="muted">No destinations for this day</Text>
+                                  <CardContent className="p-4 sm:p-6 text-center">
+                                    <Text color="muted" className="text-sm sm:text-base">No destinations for this day</Text>
                                   </CardContent>
                                 </Card>
                               )
@@ -327,12 +327,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                     }`}
                                     onClick={() => handleDestinationClick(destination)}
                                   >
-                                    <CardContent className="p-4">
-                                      <Heading level={4} size="sm" weight="semibold" className="mb-2">
+                                    <CardContent className="p-3 sm:p-4">
+                                      <Heading level={4} size="sm" weight="semibold" className="mb-2 text-sm sm:text-base">
                                         {destination.name}
                                       </Heading>
                                       {destination.timeSlot && (
-                                        <Text size="sm" color="muted" className="mb-2">
+                                        <Text size="sm" color="muted" className="mb-2 text-xs sm:text-sm">
                                           {destination.timeSlot.start_time}
                                           {' '}
                                           -
@@ -349,7 +349,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                         </Text>
                                       )}
                                       {destination.description && (
-                                        <Text size="sm" color="muted" lineClamp={2}>
+                                        <Text size="sm" color="muted" lineClamp={2} className="text-xs sm:text-sm">
                                           {destination.description}
                                         </Text>
                                       )}
@@ -362,12 +362,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                 </div>
 
                 {/* Right: Map View (70%) - Sticky until all destinations scrolled */}
-                <div className="w-[70%] relative">
+                <div className="w-full lg:w-[70%] relative order-1 lg:order-2">
                   <div
-                    className="sticky top-20"
+                    className="sticky top-14 sm:top-20"
                     style={{
-                      height: 'calc(100vh - 8rem)',
-                      minHeight: '600px',
+                      height: 'calc(100vh - 6rem)',
+                      minHeight: '400px',
                     }}
                   >
                     <TourMap

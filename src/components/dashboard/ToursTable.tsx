@@ -102,39 +102,40 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
   return (
     <>
       {/* Stats Cards - Compact buttons on desktop, tabs on mobile */}
-      <div className="flex gap-2 mb-4">
-        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+      <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
             <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Tours</p>
-            <p className="text-xl sm:text-2xl font-bold">{stats.total}</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold">{stats.total}</p>
           </div>
         </div>
-        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+        <div className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
             <p className="text-xs sm:text-sm font-medium text-muted-foreground">Active Tours</p>
-            <p className="text-xl sm:text-2xl font-bold">{stats.active}</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold">{stats.active}</p>
           </div>
         </div>
-        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+        <div className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
             <p className="text-xs sm:text-sm font-medium text-muted-foreground">Inactive Tours</p>
-            <p className="text-xl sm:text-2xl font-bold">{stats.inactive}</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold">{stats.inactive}</p>
           </div>
         </div>
       </div>
 
       {/* Tours Table */}
       <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl flex items-center gap-2">
+              <CardTitle className="text-lg sm:text-xl md:text-2xl flex items-center gap-2">
                 Tours Management
               </CardTitle>
-              <CardDescription className="mt-1 text-base">
+              <CardDescription className="mt-1 text-sm sm:text-base">
                 {filteredTours.length}
                 {' '}
                 of
+                {' '}
                 {tours.length}
                 {' '}
                 tours
@@ -142,7 +143,7 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           {filteredTours.length === 0
             ? (
                 <div className="flex items-center justify-center py-16">

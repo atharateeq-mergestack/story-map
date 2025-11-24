@@ -13,12 +13,12 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background to-muted p-4 sm:p-6">
       <ThemeToggleButton />
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Sign In</h1>
-          <p className="text-muted-foreground mt-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Sign In</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Enter your credentials to access your account
           </p>
         </div>

@@ -55,7 +55,7 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-4">
+      <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 p-4">
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -109,12 +109,11 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   type="date"
                   value={filters.filterStartDate}
                   onChange={e => handleFilterChange('filterStartDate', e.target.value)}
-                  className="w-full"
+                  className="w-full text-sm"
                   onClick={e => e.stopPropagation()}
                   onKeyDown={e => e.stopPropagation()}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="menu-filter-end-date" className="flex items-center gap-2 text-xs">
                   <CalendarIcon className="size-3" />
@@ -125,12 +124,11 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   type="date"
                   value={filters.filterEndDate}
                   onChange={e => handleFilterChange('filterEndDate', e.target.value)}
-                  className="w-full"
+                  className="w-full text-sm"
                   onClick={e => e.stopPropagation()}
                   onKeyDown={e => e.stopPropagation()}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="menu-filter-created-date" className="flex items-center gap-2 text-xs">
                   <CalendarIcon className="size-3" />
@@ -141,7 +139,7 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
                   type="date"
                   value={filters.filterCreatedDate}
                   onChange={e => handleFilterChange('filterCreatedDate', e.target.value)}
-                  className="w-full"
+                  className="w-full text-sm"
                   onClick={e => e.stopPropagation()}
                   onKeyDown={e => e.stopPropagation()}
                 />

@@ -15,22 +15,22 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-background to-muted p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-background to-muted p-4 sm:p-6 md:p-8">
       <ThemeToggleButton />
-      <div className="w-full max-w-4xl space-y-8">
+      <div className="w-full max-w-4xl space-y-6 sm:space-y-8">
         {/* Hero Section */}
-        <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
+        <div className="text-center space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
             Welcome to Tour Map
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Your all-in-one platform for productivity and collaboration.
             Get started today and experience the future of work.
           </p>
         </div>
 
         {/* CTA Section */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
           <Button asChild size="lg" className="w-full sm:w-auto">
             <Link href="/auth/signup">Get Started</Link>
           </Button>
@@ -40,7 +40,7 @@ export default async function LandingPage() {
         </div>
 
         {/* Features Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 px-4">
           <Card>
             <CardHeader>
               <CardTitle>Secure</CardTitle>

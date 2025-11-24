@@ -74,51 +74,58 @@ export default async function TourDetailsPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-7 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
         <AnimatedWrapper direction="down" delay={0}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shadow-sm hover:shadow-md transition-all duration-300"
-                >
-                  <ArrowLeftIcon className="size-4 mr-2" />
-                  Back to Tours
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  {tour.name}
-                </h1>
-                {tour.description && (
-                  <p className="text-muted-foreground mt-2 text-base">{tour.description}</p>
-                )}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <Link href="/dashboard">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shadow-sm hover:shadow-md transition-all duration-300 text-xs sm:text-sm"
+                  >
+                    <ArrowLeftIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Back to Tours</span>
+                    <span className="sm:hidden">Back</span>
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {tour.name}
+                  </h1>
+                  {tour.description && (
+                    <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">{tour.description}</p>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href={`/dashboard/tours/${id}/edit`}>
-                <Button
-                  variant="outline"
-                  className="shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <EditIcon className="size-4 mr-2" />
-                  Edit Tour
-                </Button>
-              </Link>
-              <Link href={`/dashboard/tours/${id}/view`}>
-                <Button
-                  variant="outline"
-                  className="shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <UserIcon className="size-4 mr-2" />
-                  View as User
-                </Button>
-              </Link>
-              <CopyLinkButton tourId={id} isActive={tour.status === 'active'} />
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/dashboard/tours/${id}/edit`} className="flex-1 sm:flex-none">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-300 text-xs sm:text-sm"
+                  >
+                    <EditIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Edit Tour</span>
+                    <span className="sm:hidden">Edit</span>
+                  </Button>
+                </Link>
+                <Link href={`/dashboard/tours/${id}/view`} className="flex-1 sm:flex-none">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-300 text-xs sm:text-sm"
+                  >
+                    <UserIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">View as User</span>
+                    <span className="sm:hidden">View</span>
+                  </Button>
+                </Link>
+                <CopyLinkButton tourId={id} isActive={tour.status === 'active'} />
+              </div>
             </div>
           </div>
         </AnimatedWrapper>
@@ -143,43 +150,43 @@ export default async function TourDetailsPage({
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CalendarIcon className="size-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                    <CalendarIcon className="size-3 sm:size-4 text-primary" />
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">Start Date</p>
                   </div>
-                  <p className="font-semibold text-lg">
+                  <p className="font-semibold text-base sm:text-lg">
                     {tour.startDate
                       ? formatDate(tour.startDate)
                       : '-'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CalendarIcon className="size-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                    <CalendarIcon className="size-3 sm:size-4 text-primary" />
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">End Date</p>
                   </div>
-                  <p className="font-semibold text-lg">
+                  <p className="font-semibold text-base sm:text-lg">
                     {tour.endDate
                       ? formatDate(tour.endDate)
                       : '-'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPinIcon className="size-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">Start Location</p>
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                    <MapPinIcon className="size-3 sm:size-4 text-primary" />
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">Start Location</p>
                   </div>
-                  <p className="font-semibold text-lg">{tour.startLocation || '-'}</p>
+                  <p className="font-semibold text-base sm:text-lg truncate">{tour.startLocation || '-'}</p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPinIcon className="size-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">End Location</p>
+                <div className="p-3 sm:p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-300">
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                    <MapPinIcon className="size-3 sm:size-4 text-primary" />
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">End Location</p>
                   </div>
-                  <p className="font-semibold text-lg">{tour.endLocation || '-'}</p>
+                  <p className="font-semibold text-base sm:text-lg truncate">{tour.endLocation || '-'}</p>
                 </div>
               </div>
             </CardContent>
@@ -211,7 +218,7 @@ export default async function TourDetailsPage({
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               {destinations.length === 0
                 ? (
                     <AnimatedWrapper direction="up" delay={300}>
