@@ -174,7 +174,7 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                               href={`/dashboard/tours/${tour.id}`}
                               className="hover:text-primary transition-colors duration-200 font-semibold hover:underline flex-1"
                             >
-                              <h3 className="text-base font-semibold">{tour.name}</h3>
+                              <h3 className="text-base font-semibold max-w-[80%] truncate">{tour.name}</h3>
                             </Link>
                             <Badge
                               variant={
@@ -222,11 +222,6 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                           </div>
 
                           <div className="flex items-center justify-between pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">
-                              Created:
-                              {' '}
-                              {formatDate(tour.createdAt)}
-                            </p>
                             <TourActions
                               tourId={tour.id}
                               currentStatus={tour.status}
@@ -249,7 +244,6 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                           <TableHead className="font-semibold">End Date</TableHead>
                           <TableHead className="font-semibold">Start Location</TableHead>
                           <TableHead className="font-semibold">End Location</TableHead>
-                          <TableHead className="font-semibold">Created</TableHead>
                           <TableHead className="text-right font-semibold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -305,9 +299,6 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                                 <MapPinIcon className="size-4 text-muted-foreground" />
                                 <span>{tour.endLocation || '-'}</span>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {formatDate(tour.createdAt)}
                             </TableCell>
                             <TableCell className="text-right">
                               <TourActions
