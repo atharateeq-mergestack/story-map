@@ -73,7 +73,7 @@ export default async function TourDetailsPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-7 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <AnimatedWrapper direction="down" delay={0}>
@@ -232,126 +232,210 @@ export default async function TourDetailsPage({
                     </AnimatedWrapper>
                   )
                 : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="font-semibold">Name</TableHead>
-                            <TableHead className="font-semibold">Date</TableHead>
-                            <TableHead className="font-semibold">Time Slot</TableHead>
-                            <TableHead className="font-semibold">Coordinates</TableHead>
-                            <TableHead className="font-semibold">Images</TableHead>
-                            <TableHead className="text-right font-semibold">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {destinations.map((destination: {
-                            id: string;
-                            tourId: string;
-                            name: string;
-                            date: string;
-                            timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
-                            images: string[] | null;
-                            coordinate: { lat: number; lng: number } | null;
-                            createdAt: Date;
-                            updatedAt: Date;
-                          }, index: number) => (
-                            <AnimatedTableRow key={destination.id} index={index}>
-                              <TableCell className="font-semibold">
-                                {destination.name}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <CalendarIcon className="size-4 text-muted-foreground" />
-                                  <span>
-                                    {formatDate(destination.date)}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {destination.timeSlot
-                                  ? (
-                                      <div className="flex items-center gap-2">
-                                        <ClockIcon className="size-4 text-muted-foreground" />
-                                        <div className="text-sm">
-                                          <div className="font-medium">
-                                            {destination.timeSlot.start_time}
-                                            {' '}
-                                            -
-                                            {' '}
-                                            {destination.timeSlot.end_time}
-                                          </div>
-                                          {destination.timeSlot.slot_label && (
-                                            <div className="text-muted-foreground text-xs">
-                                              {destination.timeSlot.slot_label}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )
-                                  : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                              </TableCell>
-                              <TableCell>
-                                {destination.coordinate
-                                  ? (
-                                      <div className="flex items-center gap-2">
-                                        <NavigationIcon className="size-4 text-muted-foreground" />
-                                        <div className="text-sm font-mono">
-                                          {destination.coordinate.lat.toFixed(4)}
-                                          ,
-                                          {' '}
-                                          {destination.coordinate.lng.toFixed(4)}
-                                        </div>
-                                      </div>
-                                    )
-                                  : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                              </TableCell>
-                              <TableCell>
-                                {destination.images && destination.images.length > 0
-                                  ? (
-                                      <div className="flex gap-2">
-                                        {destination.images.slice(0, 3).map((img, idx) => (
-                                          <Image
-                                            key={`${destination.id}-${idx}`}
-                                            src={img}
-                                            alt={`${destination.name} ${idx + 1}`}
-                                            width={48}
-                                            height={48}
-                                            className="size-12 rounded-lg object-cover border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md"
-                                            unoptimized={img.includes('drive.google.com')}
-                                          />
-                                        ))}
-                                        {destination.images.length > 3 && (
-                                          <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xs font-semibold border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
-                                            +
-                                            {destination.images.length - 3}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )
-                                  : (
-                                      <div className="flex items-center gap-2 text-muted-foreground">
-                                        <ImageIcon className="size-4" />
-                                        <span>-</span>
-                                      </div>
-                                    )}
-                              </TableCell>
-                              <TableCell className="text-right">
+                    <>
+                      {/* Mobile Card View */}
+                      <div className="block md:hidden space-y-3">
+                        {destinations.map((destination: {
+                          id: string;
+                          tourId: string;
+                          name: string;
+                          date: string;
+                          timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
+                          images: string[] | null;
+                          coordinate: { lat: number; lng: number } | null;
+                          createdAt: Date;
+                          updatedAt: Date;
+                        }, index: number) => (
+                          <Card key={destination.id} className="border-2 hover:shadow-md transition-all">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-start justify-between">
+                                <h3 className="text-base font-semibold flex-1">{destination.name}</h3>
                                 <DestinationActions
                                   destinationId={destination.id}
                                   destinationName={destination.name}
                                   tourId={id}
                                 />
-                              </TableCell>
-                            </AnimatedTableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <CalendarIcon className="size-4 text-muted-foreground shrink-0" />
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Date</p>
+                                    <p className="font-medium">{formatDate(destination.date)}</p>
+                                  </div>
+                                </div>
+                                {destination.timeSlot && (
+                                  <div className="flex items-center gap-2">
+                                    <ClockIcon className="size-4 text-muted-foreground shrink-0" />
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Time</p>
+                                      <p className="font-medium text-xs">
+                                        {destination.timeSlot.start_time} - {destination.timeSlot.end_time}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                {destination.coordinate && (
+                                  <div className="col-span-2 flex items-center gap-2">
+                                    <NavigationIcon className="size-4 text-muted-foreground shrink-0" />
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Coordinates</p>
+                                      <p className="font-mono text-xs">
+                                        {destination.coordinate.lat.toFixed(4)}, {destination.coordinate.lng.toFixed(4)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {destination.images && destination.images.length > 0 && (
+                                <div className="flex gap-2 pt-2 border-t">
+                                  {destination.images.slice(0, 3).map((img, idx) => (
+                                    <Image
+                                      key={`${destination.id}-${idx}`}
+                                      src={img}
+                                      alt={`${destination.name} ${idx + 1}`}
+                                      width={48}
+                                      height={48}
+                                      className="size-12 rounded-lg object-cover border-2 border-border"
+                                      unoptimized={img.includes('drive.google.com')}
+                                    />
+                                  ))}
+                                  {destination.images.length > 3 && (
+                                    <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xs font-semibold border-2 border-border">
+                                      +{destination.images.length - 3}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="font-semibold">Name</TableHead>
+                              <TableHead className="font-semibold">Date</TableHead>
+                              <TableHead className="font-semibold">Time Slot</TableHead>
+                              <TableHead className="font-semibold">Coordinates</TableHead>
+                              <TableHead className="font-semibold">Images</TableHead>
+                              <TableHead className="text-right font-semibold">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {destinations.map((destination: {
+                              id: string;
+                              tourId: string;
+                              name: string;
+                              date: string;
+                              timeSlot: { start_time: string; end_time: string; slot_label?: string } | null;
+                              images: string[] | null;
+                              coordinate: { lat: number; lng: number } | null;
+                              createdAt: Date;
+                              updatedAt: Date;
+                            }, index: number) => (
+                              <AnimatedTableRow key={destination.id} index={index}>
+                                <TableCell className="font-semibold">
+                                  {destination.name}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <CalendarIcon className="size-4 text-muted-foreground" />
+                                    <span>
+                                      {formatDate(destination.date)}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {destination.timeSlot
+                                    ? (
+                                        <div className="flex items-center gap-2">
+                                          <ClockIcon className="size-4 text-muted-foreground" />
+                                          <div className="text-sm">
+                                            <div className="font-medium">
+                                              {destination.timeSlot.start_time}
+                                              {' '}
+                                              -
+                                              {' '}
+                                              {destination.timeSlot.end_time}
+                                            </div>
+                                            {destination.timeSlot.slot_label && (
+                                              <div className="text-muted-foreground text-xs">
+                                                {destination.timeSlot.slot_label}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )
+                                    : (
+                                        <span className="text-muted-foreground">-</span>
+                                      )}
+                                </TableCell>
+                                <TableCell>
+                                  {destination.coordinate
+                                    ? (
+                                        <div className="flex items-center gap-2">
+                                          <NavigationIcon className="size-4 text-muted-foreground" />
+                                          <div className="text-sm font-mono">
+                                            {destination.coordinate.lat.toFixed(4)}
+                                            ,
+                                            {' '}
+                                            {destination.coordinate.lng.toFixed(4)}
+                                          </div>
+                                        </div>
+                                      )
+                                    : (
+                                        <span className="text-muted-foreground">-</span>
+                                      )}
+                                </TableCell>
+                                <TableCell>
+                                  {destination.images && destination.images.length > 0
+                                    ? (
+                                        <div className="flex gap-2">
+                                          {destination.images.slice(0, 3).map((img, idx) => (
+                                            <Image
+                                              key={`${destination.id}-${idx}`}
+                                              src={img}
+                                              alt={`${destination.name} ${idx + 1}`}
+                                              width={48}
+                                              height={48}
+                                              className="size-12 rounded-lg object-cover border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md"
+                                              unoptimized={img.includes('drive.google.com')}
+                                            />
+                                          ))}
+                                          {destination.images.length > 3 && (
+                                            <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-xs font-semibold border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md">
+                                              +
+                                              {destination.images.length - 3}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    : (
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                          <ImageIcon className="size-4" />
+                                          <span>-</span>
+                                        </div>
+                                      )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DestinationActions
+                                    destinationId={destination.id}
+                                    destinationName={destination.name}
+                                    tourId={id}
+                                  />
+                                </TableCell>
+                              </AnimatedTableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
                   )}
             </CardContent>
           </Card>

@@ -1,5 +1,6 @@
 'use server';
 
+import moment from 'moment';
 import Papa from 'papaparse';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
@@ -147,7 +148,7 @@ export async function bulkUploadTours(formData: FormData): Promise<BulkUploadRes
     // Create history entry
     const historyEntry = {
       action: 'created',
-      timestamp: new Date().toISOString(),
+      timestamp: moment().toISOString(),
       notes: 'Tour created via bulk upload',
     };
 
@@ -324,7 +325,7 @@ async function handleGeoJSONUpload(file: File): Promise<BulkUploadResult> {
     // Create history entry
     const historyEntry = {
       action: 'created',
-      timestamp: new Date().toISOString(),
+      timestamp: moment().toISOString(),
       notes: 'Tour created via bulk upload from GeoJSON',
     };
 

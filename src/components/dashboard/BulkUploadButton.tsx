@@ -12,7 +12,7 @@ export function BulkUploadButton() {
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         <UploadIcon className="mr-2 size-4" />
-        Bulk Upload
+        <span className="hidden sm:block">Bulk Upload </span>
       </Button>
       <BulkUploadDialog open={open} onOpenChange={setOpen} />
     </>

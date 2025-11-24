@@ -2,6 +2,7 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowLeftIcon } from 'lucide-react';
+import moment from 'moment';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -69,9 +70,9 @@ export default function EditDestinationPage() {
         const data = await response.json();
         const destination = data.destination;
 
-        // Format date for input
+        // Format date for input using moment
         const date = destination.date
-          ? new Date(destination.date).toISOString().split('T')[0]
+          ? moment(destination.date).format('YYYY-MM-DD')
           : '';
 
         // Format time slot

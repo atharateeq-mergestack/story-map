@@ -1,9 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import type { TourFilters } from './TourFilterBar';
+import { createContext, use, useMemo, useState } from 'react';
 import { DashboardActions } from './DashboardActions';
 import { ToursTableWrapper } from './ToursTableWrapper';
-import type { TourFilters } from './TourFilterBar';
 
 type Tour = {
   id: string;
@@ -34,15 +34,16 @@ function FilterProvider({ children }: { children: React.ReactNode }) {
     filterStartDate: '',
     filterEndDate: '',
   });
+  const value = useMemo(() => ({ filters, setFilters }), [filters]);
   return (
-    <FilterContext.Provider value={{ filters, setFilters }}>
+    <FilterContext value={value}>
       {children}
-    </FilterContext.Provider>
+    </FilterContext>
   );
 }
 
 function useFilterState() {
-  const context = useContext(FilterContext);
+  const context = use(FilterContext);
   if (!context) {
     throw new Error('useFilterState must be used within FilterProvider');
   }
@@ -69,4 +70,3 @@ export function DashboardWithFilters({ tours, activeTourId }: DashboardWithFilte
 export function DashboardFilterProvider({ children }: { children: React.ReactNode }) {
   return <FilterProvider>{children}</FilterProvider>;
 }
-

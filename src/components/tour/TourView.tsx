@@ -1,5 +1,6 @@
 'use client';
 
+import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,11 +43,10 @@ type TourViewProps = {
 
 function calculateTotalDays(startDate: string | null, endDate: string | null): number {
   if (!startDate || !endDate) return 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays + 1; // Include both start and end days
+  const start = moment(startDate);
+  const end = moment(endDate);
+  if (!start.isValid() || !end.isValid()) return 0;
+  return end.diff(start, 'days') + 1; // Include both start and end days
 }
 
 

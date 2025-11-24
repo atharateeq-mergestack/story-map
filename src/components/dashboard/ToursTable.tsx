@@ -2,6 +2,7 @@
 
 import type { TourFilters } from '@/components/dashboard/TourFilterBar';
 import { CalendarIcon, MapPinIcon } from 'lucide-react';
+import moment from 'moment';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { AnimatedTableRow } from '@/components/dashboard/AnimatedTableRow';
@@ -55,22 +56,33 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
 
       // Filter by created date - show tours created on or after the selected date
       if (filters.filterCreatedDate) {
-        const createdDate = new Date(tour.createdAt).toISOString().split('T')[0];
-        if (createdDate && createdDate < filters.filterCreatedDate) {
+        const createdMoment = moment(tour.createdAt);
+        const filterMoment = moment(filters.filterCreatedDate);
+        if (!createdMoment.isValid() || createdMoment.isBefore(filterMoment, 'day')) {
           return false;
         }
       }
 
       // Filter by start date - show tours starting on or after the selected date
       if (filters.filterStartDate) {
-        if (!tour.startDate || tour.startDate < filters.filterStartDate) {
+        if (!tour.startDate) {
+          return false;
+        }
+        const startMoment = moment(tour.startDate);
+        const filterMoment = moment(filters.filterStartDate);
+        if (!startMoment.isValid() || startMoment.isBefore(filterMoment, 'day')) {
           return false;
         }
       }
 
       // Filter by end date - show tours ending on or before the selected date
       if (filters.filterEndDate) {
-        if (!tour.endDate || tour.endDate > filters.filterEndDate) {
+        if (!tour.endDate) {
+          return false;
+        }
+        const endMoment = moment(tour.endDate);
+        const filterMoment = moment(filters.filterEndDate);
+        if (!endMoment.isValid() || endMoment.isAfter(filterMoment, 'day')) {
           return false;
         }
       }
@@ -89,38 +101,26 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
 
   return (
     <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Tours</p>
-                <p className="text-3xl font-bold mt-2">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Tours</p>
-                <p className="text-3xl font-bold mt-2">{stats.active}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Inactive Tours</p>
-                <p className="text-3xl font-bold mt-2">{stats.inactive}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Cards - Compact buttons on desktop, tabs on mobile */}
+      <div className="flex gap-2 mb-4">
+        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Tours</p>
+            <p className="text-xl sm:text-2xl font-bold">{stats.total}</p>
+          </div>
+        </div>
+        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">Active Tours</p>
+            <p className="text-xl sm:text-2xl font-bold">{stats.active}</p>
+          </div>
+        </div>
+        <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-lg border-2 bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-center justify-between sm:justify-center sm:flex-col sm:gap-1">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">Inactive Tours</p>
+            <p className="text-xl sm:text-2xl font-bold">{stats.inactive}</p>
+          </div>
+        </div>
       </div>
 
       {/* Tours Table */}
@@ -162,88 +162,165 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                 </div>
               )
             : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="font-semibold">Tour Name</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="font-semibold">Start Date</TableHead>
-                        <TableHead className="font-semibold">End Date</TableHead>
-                        <TableHead className="font-semibold">Start Location</TableHead>
-                        <TableHead className="font-semibold">End Location</TableHead>
-                        <TableHead className="font-semibold">Created</TableHead>
-                        <TableHead className="text-right font-semibold">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTours.map((tour, index) => (
-                        <AnimatedTableRow key={tour.id} index={index}>
-                          <TableCell className="font-medium">
+                <>
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden space-y-3">
+                    {filteredTours.map(tour => (
+                      <Card key={tour.id} className="border-2 hover:shadow-md transition-all">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-start justify-between">
                             <Link
                               href={`/dashboard/tours/${tour.id}`}
-                              className="hover:text-primary transition-colors duration-200 font-semibold hover:underline"
+                              className="hover:text-primary transition-colors duration-200 font-semibold hover:underline flex-1"
                             >
-                              {tour.name}
+                              <h3 className="text-base font-semibold">{tour.name}</h3>
                             </Link>
-                          </TableCell>
-                          <TableCell>
                             <Badge
                               variant={
                                 tour.status === 'active' ? 'success' : 'secondary'
                               }
-                              className="shadow-sm"
+                              className="shadow-sm ml-2"
                             >
                               {tour.status.charAt(0).toUpperCase() + tour.status.slice(1)}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="flex items-center gap-2">
-                              <CalendarIcon className="size-4 text-muted-foreground" />
-                              <span>
-                                {tour.startDate
-                                  ? formatDate(tour.startDate)
-                                  : '-'}
-                              </span>
+                              <CalendarIcon className="size-4 text-muted-foreground shrink-0" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">Start</p>
+                                <p className="font-medium">
+                                  {tour.startDate ? formatDate(tour.startDate) : '-'}
+                                </p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
                             <div className="flex items-center gap-2">
-                              <CalendarIcon className="size-4 text-muted-foreground" />
-                              <span>
-                                {tour.endDate
-                                  ? formatDate(tour.endDate)
-                                  : '-'}
-                              </span>
+                              <CalendarIcon className="size-4 text-muted-foreground shrink-0" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">End</p>
+                                <p className="font-medium">
+                                  {tour.endDate ? formatDate(tour.endDate) : '-'}
+                                </p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
                             <div className="flex items-center gap-2">
-                              <MapPinIcon className="size-4 text-muted-foreground" />
-                              <span>{tour.startLocation || '-'}</span>
+                              <MapPinIcon className="size-4 text-muted-foreground shrink-0" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">From</p>
+                                <p className="font-medium truncate">{tour.startLocation || '-'}</p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
                             <div className="flex items-center gap-2">
-                              <MapPinIcon className="size-4 text-muted-foreground" />
-                              <span>{tour.endLocation || '-'}</span>
+                              <MapPinIcon className="size-4 text-muted-foreground shrink-0" />
+                              <div>
+                                <p className="text-xs text-muted-foreground">To</p>
+                                <p className="font-medium truncate">{tour.endLocation || '-'}</p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {formatDate(tour.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-right">
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <p className="text-xs text-muted-foreground">
+                              Created:
+                              {' '}
+                              {formatDate(tour.createdAt)}
+                            </p>
                             <TourActions
                               tourId={tour.id}
                               currentStatus={tour.status}
                               activeTourId={activeTourId}
                             />
-                          </TableCell>
-                        </AnimatedTableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="font-semibold">Tour Name</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold">Start Date</TableHead>
+                          <TableHead className="font-semibold">End Date</TableHead>
+                          <TableHead className="font-semibold">Start Location</TableHead>
+                          <TableHead className="font-semibold">End Location</TableHead>
+                          <TableHead className="font-semibold">Created</TableHead>
+                          <TableHead className="text-right font-semibold">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTours.map((tour, index) => (
+                          <AnimatedTableRow key={tour.id} index={index}>
+                            <TableCell className="font-medium">
+                              <Link
+                                href={`/dashboard/tours/${tour.id}`}
+                                className="hover:text-primary transition-colors duration-200 font-semibold hover:underline"
+                              >
+                                {tour.name}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  tour.status === 'active' ? 'success' : 'secondary'
+                                }
+                                className="shadow-sm"
+                              >
+                                {tour.status.charAt(0).toUpperCase() + tour.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="size-4 text-muted-foreground" />
+                                <span>
+                                  {tour.startDate
+                                    ? formatDate(tour.startDate)
+                                    : '-'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="size-4 text-muted-foreground" />
+                                <span>
+                                  {tour.endDate
+                                    ? formatDate(tour.endDate)
+                                    : '-'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MapPinIcon className="size-4 text-muted-foreground" />
+                                <span>{tour.startLocation || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MapPinIcon className="size-4 text-muted-foreground" />
+                                <span>{tour.endLocation || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDate(tour.createdAt)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <TourActions
+                                tourId={tour.id}
+                                currentStatus={tour.status}
+                                activeTourId={activeTourId}
+                              />
+                            </TableCell>
+                          </AnimatedTableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
         </CardContent>
       </Card>

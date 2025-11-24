@@ -86,13 +86,13 @@ export default function CreateTourPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-3 md:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
           <Link href="/dashboard">
             <Button variant="outline" size="sm">
               <ArrowLeftIcon className="size-4" />
-              Back to Tours
+              <span className="hidden sm:block">Back to Tours</span>
             </Button>
           </Link>
           <h1 className="text-3xl font-bold">Create New Tour</h1>

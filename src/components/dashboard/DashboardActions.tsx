@@ -1,11 +1,11 @@
 'use client';
 
+import type { TourFilters } from './TourFilterBar';
 import { PlusIcon } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { BulkUploadButton } from './BulkUploadButton';
 import { TourFilterMenu } from './TourFilterMenu';
-import type { TourFilters } from './TourFilterBar';
-import { Button } from '@/components/ui/button';
 
 type DashboardActionsProps = {
   filters: TourFilters;
@@ -20,10 +20,9 @@ export function DashboardActions({ filters, onFiltersChange }: DashboardActionsP
       <Link href="/dashboard/tours/new">
         <Button className="shadow-md hover:shadow-lg transition-all duration-300">
           <PlusIcon className="size-4 mr-2" />
-          Create New Tour
+          <span className="hidden sm:block">Create New Tour </span>
         </Button>
       </Link>
     </div>
   );
 }
-

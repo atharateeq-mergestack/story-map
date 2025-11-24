@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { and, desc, eq } from 'drizzle-orm';
+import moment from 'moment';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Create history entry
     const historyEntry = {
       action: 'created',
-      timestamp: new Date().toISOString(),
+      timestamp: moment().toISOString(),
       notes: 'Tour created',
     };
 

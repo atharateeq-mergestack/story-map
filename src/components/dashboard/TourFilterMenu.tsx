@@ -47,7 +47,7 @@ export function TourFilterMenu({ filters, onFiltersChange }: TourFilterMenuProps
           className="shadow-md hover:shadow-lg transition-all duration-300"
         >
           <SearchIcon className="size-4 mr-2" />
-          Filters
+          <span className="hidden sm:block">Filters</span>
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-2">
               {activeFilterCount}

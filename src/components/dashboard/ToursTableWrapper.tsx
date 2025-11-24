@@ -1,7 +1,7 @@
 'use client';
 
-import { ToursTable } from './ToursTable';
 import type { TourFilters } from './TourFilterBar';
+import { ToursTable } from './ToursTable';
 
 type Tour = {
   id: string;
@@ -30,4 +30,3 @@ export function ToursTableWrapper({ tours, activeTourId, filters }: ToursTableWr
     />
   );
 }
-

@@ -64,9 +64,19 @@ export default async function TourPage({
   return (
     <TourView
       tour={tour}
-      destinationsByDate={destinationsByDate}
+      destinationsByDate={
+        Object.fromEntries(
+          Object.entries(destinationsByDate).map(([date, destinations]) => [
+            date,
+            destinations.map(dest => ({
+              ...dest,
+              // Convert null images to undefined per Destination type
+              images: dest.images ?? undefined,
+            })),
+          ]),
+        )
+      }
       dates={dates}
     />
   );
 }
-

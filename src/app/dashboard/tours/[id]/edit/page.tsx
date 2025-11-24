@@ -2,6 +2,7 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowLeftIcon } from 'lucide-react';
+import moment from 'moment';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -71,12 +72,12 @@ export default function EditTourPage() {
         const data = await response.json();
         const tour = data.tour;
 
-        // Format dates for input
+        // Format dates for input using moment
         const startDate = tour.startDate
-          ? new Date(tour.startDate).toISOString().split('T')[0]
+          ? moment(tour.startDate).format('YYYY-MM-DD')
           : '';
         const endDate = tour.endDate
-          ? new Date(tour.endDate).toISOString().split('T')[0]
+          ? moment(tour.endDate).format('YYYY-MM-DD')
           : '';
 
         form.reset({
@@ -137,7 +138,7 @@ export default function EditTourPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-7 md:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="flex items-center gap-4">
           <Link href={`/dashboard/tours/${tourId}`}>

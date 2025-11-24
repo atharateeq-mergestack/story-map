@@ -41,14 +41,16 @@ export default async function DashboardPage() {
   const activeTourId = await getActiveTourId();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-linear-to-br from-background via-background-secondary to-background p-7 md:p-8">
+      <div className="max-w-7xl md:w-ful mx-auto space-y-8">
         <DashboardFilterProvider>
           {/* Header */}
           <AnimatedWrapper direction="down" delay={0}>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-start justify-between sm:gap-2">
               <DashboardHeader />
-              <DashboardActionsOnly />
+              <div className="flex self-center justify-end">
+                <DashboardActionsOnly />
+              </div>
             </div>
           </AnimatedWrapper>
 

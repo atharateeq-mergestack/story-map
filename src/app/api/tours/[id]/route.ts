@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { and, eq } from 'drizzle-orm';
+import moment from 'moment';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { tours } from '@/db/schema';
@@ -68,7 +69,7 @@ export async function PATCH(
     if (status && status !== tour.status) {
       const historyEntry = {
         action: 'status_changed',
-        timestamp: new Date().toISOString(),
+        timestamp: moment().toISOString(),
         notes: `Status changed from ${tour.status} to ${status}`,
       };
       updateData.history = [...(tour.history || []), historyEntry];
