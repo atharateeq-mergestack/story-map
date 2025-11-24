@@ -52,7 +52,9 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
               <h3 className="font-semibold text-lg">Filters</h3>
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
-                  {Object.values(filters).filter(v => v !== '').length} active
+                  {Object.values(filters).filter(v => v !== '').length}
+                  {' '}
+                  active
                 </Badge>
               )}
             </div>
@@ -88,7 +90,7 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
               id="search"
               placeholder="Search by name, description, start location, end location, or status..."
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={e => handleFilterChange('search', e.target.value)}
               className="w-full"
             />
             <p className="text-xs text-muted-foreground">
@@ -109,7 +111,7 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     id="filter-created-date"
                     type="date"
                     value={filters.filterCreatedDate}
-                    onChange={(e) => handleFilterChange('filterCreatedDate', e.target.value)}
+                    onChange={e => handleFilterChange('filterCreatedDate', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -121,7 +123,7 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     id="filter-start-date"
                     type="date"
                     value={filters.filterStartDate}
-                    onChange={(e) => handleFilterChange('filterStartDate', e.target.value)}
+                    onChange={e => handleFilterChange('filterStartDate', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -133,7 +135,7 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
                     id="filter-end-date"
                     type="date"
                     value={filters.filterEndDate}
-                    onChange={(e) => handleFilterChange('filterEndDate', e.target.value)}
+                    onChange={e => handleFilterChange('filterEndDate', e.target.value)}
                   />
                 </div>
               </div>
@@ -144,4 +146,3 @@ export function TourFilterBar({ filters, onFiltersChange }: TourFilterBarProps) 
     </Card>
   );
 }
-

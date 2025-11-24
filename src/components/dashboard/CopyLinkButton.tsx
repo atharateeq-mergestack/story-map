@@ -1,6 +1,6 @@
 'use client';
 
-import { CopyIcon, CheckIcon } from 'lucide-react';
+import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export function CopyLinkButton({ tourId, isActive }: CopyLinkButtonProps) {
       setCopied(true);
       toast.success('Link copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy link');
     }
   };
@@ -48,17 +48,19 @@ export function CopyLinkButton({ tourId, isActive }: CopyLinkButtonProps) {
             disabled={!isActive}
             className="shadow-md hover:shadow-lg transition-all duration-300"
           >
-            {copied ? (
-              <>
-                <CheckIcon className="size-4 mr-2" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <CopyIcon className="size-4 mr-2" />
-                Copy Link
-              </>
-            )}
+            {copied
+              ? (
+                  <>
+                    <CheckIcon className="size-4 mr-2" />
+                    Copied!
+                  </>
+                )
+              : (
+                  <>
+                    <CopyIcon className="size-4 mr-2" />
+                    Copy Link
+                  </>
+                )}
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -72,4 +74,3 @@ export function CopyLinkButton({ tourId, isActive }: CopyLinkButtonProps) {
     </TooltipProvider>
   );
 }
-
