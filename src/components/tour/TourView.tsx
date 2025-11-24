@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Heading } from '@/components/ui/common/Heading';
 import { Text } from '@/components/ui/common/Text';
 import { Env } from '@/libs/Env';
+import { formatDate } from '@/lib/utils';
 import { TourMap } from './TourMap';
 import { DestinationDetailPanel } from './DestinationDetailPanel';
 
@@ -48,23 +49,6 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
   return diffDays + 1; // Include both start and end days
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function formatFullDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
 
 export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const [activeDate, setActiveDate] = useState<string | null>(dates[0] || null);
@@ -225,21 +209,13 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                   <div>
                     <Text size="sm" color="muted">Start Date</Text>
                     <Text weight="medium">
-                      {new Date(tour.startDate).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatDate(tour.startDate)}
                     </Text>
                   </div>
                   <div>
                     <Text size="sm" color="muted">End Date</Text>
                     <Text weight="medium">
-                      {new Date(tour.endDate).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatDate(tour.endDate)}
                     </Text>
                   </div>
                   {totalDays > 0 && (
@@ -297,7 +273,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
             >
               {/* Day Section Title */}
               <Heading level={2} size="2xl" weight="bold" className="mb-6">
-                Day {dayNumber} – {formatFullDate(date)}
+                Day {dayNumber} – {formatDate(date)}
               </Heading>
 
               {/* Split Layout: Destinations/Detail (30%) | Map (70%) */}

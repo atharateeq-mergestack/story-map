@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
+import { formatDate } from '@/lib/utils';
 
 async function getTour(id: string) {
   try {
@@ -130,10 +131,10 @@ export default async function TourDetailsPage({
                   <CardDescription className="mt-1">Tour details and status</CardDescription>
                 </div>
                 <Badge
-                  variant={tour.status === 'active' ? 'default' : 'secondary'}
+                  variant={tour.status === 'active' ? 'success' : 'secondary'}
                   className="shadow-sm text-sm px-3 py-1"
                 >
-                  {tour.status}
+                  {tour.status.charAt(0).toUpperCase() + tour.status.slice(1)}
                 </Badge>
               </div>
             </CardHeader>
@@ -146,11 +147,7 @@ export default async function TourDetailsPage({
                   </div>
                   <p className="font-semibold text-lg">
                     {tour.startDate
-                      ? new Date(tour.startDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
+                      ? formatDate(tour.startDate)
                       : '-'}
                   </p>
                 </div>
@@ -161,11 +158,7 @@ export default async function TourDetailsPage({
                   </div>
                   <p className="font-semibold text-lg">
                     {tour.endDate
-                      ? new Date(tour.endDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })
+                      ? formatDate(tour.endDate)
                       : '-'}
                   </p>
                 </div>
@@ -271,11 +264,7 @@ export default async function TourDetailsPage({
                                 <div className="flex items-center gap-2">
                                   <CalendarIcon className="size-4 text-muted-foreground" />
                                   <span>
-                                    {new Date(destination.date).toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                    })}
+                                    {formatDate(destination.date)}
                                   </span>
                                 </div>
                               </TableCell>

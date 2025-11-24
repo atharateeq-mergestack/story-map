@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
+import { formatDate } from '@/lib/utils';
 
 async function getTour(id: string) {
   try {
@@ -101,7 +102,7 @@ export default async function ViewAsUserPage({
                 <p className="text-sm text-muted-foreground">Start Date</p>
                 <p className="font-medium">
                   {tour.startDate
-                    ? new Date(tour.startDate).toLocaleDateString()
+                    ? formatDate(tour.startDate)
                     : '-'}
                 </p>
               </div>
@@ -109,7 +110,7 @@ export default async function ViewAsUserPage({
                 <p className="text-sm text-muted-foreground">End Date</p>
                 <p className="font-medium">
                   {tour.endDate
-                    ? new Date(tour.endDate).toLocaleDateString()
+                    ? formatDate(tour.endDate)
                     : '-'}
                 </p>
               </div>
@@ -149,12 +150,7 @@ export default async function ViewAsUserPage({
                       .map(([date, dateDestinations]) => (
                         <div key={date} className="space-y-4">
                           <h3 className="text-lg font-semibold">
-                            {new Date(date).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
+                            {formatDate(date)}
                           </h3>
                           <Table>
                             <TableHeader>

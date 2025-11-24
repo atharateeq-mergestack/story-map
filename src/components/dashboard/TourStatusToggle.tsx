@@ -3,13 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type TourStatusToggleProps = {
   tourId: string;
@@ -49,26 +44,35 @@ export function TourStatusToggle({ tourId, currentStatus }: TourStatusToggleProp
     }
   };
 
+  const isActive = status === 'active';
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <Badge
-        variant={status === 'active' ? 'default' : 'secondary'}
+        variant={isActive ? 'success' : 'secondary'}
+        className="shadow-sm min-w-[80px] justify-center"
       >
-        {status}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
-      <Select
-        value={status}
-        onValueChange={value => handleStatusChange(value as 'active' | 'inactive')}
-        disabled={loading}
-      >
-        <SelectTrigger className="w-32">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="inactive">Inactive</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-        </SelectContent>
-      </Select>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={isActive}
+                onCheckedChange={(checked) => {
+                  handleStatusChange(checked ? 'active' : 'inactive');
+                }}
+                disabled={loading}
+                className="data-[state=checked]:bg-success"
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isActive ? 'Deactivate tour' : 'Activate tour'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heading } from '@/components/ui/common/Heading';
 import { Text } from '@/components/ui/common/Text';
+import { formatDate } from '@/lib/utils';
 
 type Destination = {
   id: string;
@@ -55,12 +56,7 @@ export function DestinationDetailPanel({
             {destination.name}
           </Heading>
           <Text size="sm" color="muted">
-            {new Date(destination.date).toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
+            {formatDate(destination.date)}
           </Text>
         </div>
 
