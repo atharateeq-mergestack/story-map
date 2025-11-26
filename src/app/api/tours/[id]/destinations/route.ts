@@ -7,7 +7,7 @@ import { processImageUrls } from '@/utils/image-utils';
 
 // GET - Get all destinations for a tour
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {

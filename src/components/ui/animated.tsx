@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Children, isValidElement } from 'react';
 import { cn } from '@/lib/utils';
 
 type AnimatedWrapperProps = {
@@ -54,15 +55,21 @@ export function StaggeredList({
   return (
     <div className={className}>
       {Array.isArray(children)
-        ? children.map((child, index) => (
-            <AnimatedWrapper
-              key={index}
-              delay={index * staggerDelay}
-              direction="up"
-            >
-              {child}
-            </AnimatedWrapper>
-          ))
+        ? Children.map(children, (child, index) => {
+            // Use the child's key if it's a valid React element, otherwise use index
+            const key = isValidElement(child) && child.key
+              ? child.key
+              : `staggered-${index}`;
+            return (
+              <AnimatedWrapper
+                key={key}
+                delay={index * staggerDelay}
+                direction="up"
+              >
+                {child}
+              </AnimatedWrapper>
+            );
+          })
         : children}
     </div>
   );

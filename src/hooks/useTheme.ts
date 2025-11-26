@@ -56,6 +56,10 @@ export function useTheme() {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
+    // Return no-op cleanup function when not using system theme
+    return () => {
+      // No cleanup needed
+    };
   }, [applyTheme]);
 
   const setThemeMode = useCallback(

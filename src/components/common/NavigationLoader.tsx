@@ -26,6 +26,10 @@ export function NavigationLoader() {
         clearTimeout(timer);
       };
     }
+    // Return no-op cleanup function when condition is not met
+    return () => {
+      // No cleanup needed
+    };
   }, [pathname]);
 
   return null;

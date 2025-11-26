@@ -415,11 +415,11 @@ export default async function TourDetailsPage({
                                   {destination.images && destination.images.length > 0
                                     ? (
                                         <div className="flex gap-2">
-                                          {destination.images.slice(0, 3).map((img, idx) => (
+                                          {destination.images.slice(0, 3).map(img => (
                                             <Image
-                                              key={`${destination.id}-${idx}`}
+                                              key={`${destination.id}-${img}`}
                                               src={img}
-                                              alt={`${destination.name} ${idx + 1}`}
+                                              alt={`${destination.name} image`}
                                               width={48}
                                               height={48}
                                               className="size-12 rounded-lg object-cover border-2 border-border hover:border-primary transition-all duration-300 shadow-sm hover:shadow-md"

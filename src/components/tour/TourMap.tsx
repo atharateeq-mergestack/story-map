@@ -90,6 +90,9 @@ export function TourMap({
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
+    // Store event listeners for cleanup
+    const clickHandlers: Array<{ element: HTMLElement; handler: () => void }> = [];
+
     // Add markers for all destinations
     destinations.forEach((destination) => {
       if (!destination.coordinate) {
@@ -133,11 +136,13 @@ export function TourMap({
         .addTo(map.current!);
 
       // Add click handler to marker
-      el.addEventListener('click', () => {
+      const clickHandler = () => {
         if (onMarkerClick) {
           onMarkerClick(destination.id);
         }
-      });
+      };
+      el.addEventListener('click', clickHandler);
+      clickHandlers.push({ element: el, handler: clickHandler });
 
       markersRef.current.push(marker);
 
@@ -151,7 +156,14 @@ export function TourMap({
         marker.togglePopup();
       }
     });
-  }, [destinations, activeDestinationId, isMapLoaded]);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      clickHandlers.forEach(({ element, handler }) => {
+        element.removeEventListener('click', handler);
+      });
+    };
+  }, [destinations, activeDestinationId, isMapLoaded, onMarkerClick]);
 
   return (
     <div

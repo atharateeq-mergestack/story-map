@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server';
  * Get a specific profile by user ID
  */
 export async function GET(
+  _request: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
@@ -102,7 +103,7 @@ export async function PUT(
  * Delete a profile
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
   try {

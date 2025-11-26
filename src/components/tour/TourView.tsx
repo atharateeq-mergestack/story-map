@@ -84,7 +84,11 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           }
         }
       }
-      setActiveDate(dates[currentActiveIndex] || null);
+      const newActiveDate = dates[currentActiveIndex] || null;
+      setActiveDate((prevDate) => {
+        // Only update if the date actually changed
+        return prevDate !== newActiveDate ? newActiveDate : prevDate;
+      });
     };
 
     window.addEventListener('scroll', handleScroll);

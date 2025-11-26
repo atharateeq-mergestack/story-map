@@ -26,7 +26,7 @@ export function NavigationLink({
 }: NavigationLinkProps) {
   const pathname = usePathname();
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleClick = (_e: React.MouseEvent<HTMLAnchorElement>) => {
     if (onClick) {
       onClick();
     }

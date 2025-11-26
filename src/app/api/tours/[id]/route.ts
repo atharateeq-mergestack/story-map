@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // GET - Get a single tour by ID
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -55,10 +55,10 @@ export async function PATCH(
     }
 
     const tour = currentTour[0];
-    const updateData: typeof tours.$inferInsert = {};
+    const updateData: Partial<typeof tours.$inferInsert> = {};
 
     // If setting tour as active, deactivate all other non-deleted tours
-    if (status === 'active' && tour.status !== 'active') {
+    if (status === 'active' && tour?.status !== 'active') {
       await db
         .update(tours)
         .set({ status: 'inactive' })
@@ -66,13 +66,13 @@ export async function PATCH(
     }
 
     // Add history entry for status change
-    if (status && status !== tour.status) {
+    if (status && status !== tour?.status) {
       const historyEntry = {
         action: 'status_changed',
         timestamp: moment().toISOString(),
-        notes: `Status changed from ${tour.status} to ${status}`,
+        notes: `Status changed from ${tour?.status} to ${status}`,
       };
-      updateData.history = [...(tour.history || []), historyEntry];
+      updateData.history = [...(tour?.history || []), historyEntry];
     }
 
     // Update other fields
@@ -121,7 +121,7 @@ export async function PATCH(
 
 // DELETE - Soft delete a tour
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -165,7 +165,7 @@ export async function DELETE(
       .set({
         isDeleted: true,
         deletedBy: user.id,
-        history: [...(tour.history || []), historyEntry],
+        history: [...(tour?.history || []), historyEntry],
         updatedAt: new Date(),
       })
       .where(eq(tours.id, id))
