@@ -31,6 +31,15 @@ export default antfu(
     // Ignored paths
     ignores: [
       'migrations/**/*',
+      '.pnpm-store/**/*',
+      'node_modules/**/*',
+      '.next/**/*',
+      'out/**/*',
+      'build/**/*',
+      'dist/**/*',
+      'coverage/**/*',
+      '.vercel/**/*',
+      'storybook-static/**/*',
     ],
   },
   // --- Next.js Specific Rules ---
