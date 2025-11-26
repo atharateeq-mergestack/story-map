@@ -3,6 +3,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
+import { processImageUrls } from '@/utils/image-utils';
 
 // GET - Get all destinations for a tour
 export async function GET(
@@ -77,6 +78,10 @@ export async function POST(
       return NextResponse.json({ error: 'Tour not found' }, { status: 404 });
     }
 
+    // Process images: download from Google Drive and upload to Supabase if needed
+    const imageUrls = images || [];
+    const processedImages = await processImageUrls(imageUrls, 'destinations');
+
     const newDestination = await db
       .insert(destinations)
       .values({
@@ -84,7 +89,7 @@ export async function POST(
         name,
         date,
         timeSlot: timeSlot || null,
-        images: images || [],
+        images: processedImages,
         coordinate: coordinate || null,
         description,
         metadata: metadata || {},

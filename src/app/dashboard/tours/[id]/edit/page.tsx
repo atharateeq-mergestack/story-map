@@ -153,7 +153,7 @@ export default function EditTourPage() {
 
         <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-            <CardTitle>Tour Information</CardTitle>
+            <CardTitle className="mt-4">Tour Information</CardTitle>
             <CardDescription>
               Update the tour details
             </CardDescription>

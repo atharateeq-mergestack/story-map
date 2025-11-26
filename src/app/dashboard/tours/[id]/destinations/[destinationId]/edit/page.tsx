@@ -3,7 +3,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowLeftIcon } from 'lucide-react';
 import moment from 'moment';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -21,6 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import { Textarea } from '@/components/ui/textarea';
 
 const destinationSchema = yup.object({
@@ -186,12 +186,12 @@ export default function EditDestinationPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <Link href={`/dashboard/tours/${tourId}`}>
+          <NavigationLink href={`/dashboard/tours/${tourId}`} message="Loading...">
             <Button variant="outline" size="sm" className="shadow-sm hover:shadow-md transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto">
               <ArrowLeftIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
               Back to Tour
             </Button>
-          </Link>
+          </NavigationLink>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Edit Destination</h1>
         </div>
 
@@ -393,11 +393,11 @@ export default function EditDestinationPage() {
                   <Button type="submit" disabled={loading} className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
                     {loading ? 'Updating...' : 'Update Destination'}
                   </Button>
-                  <Link href={`/dashboard/tours/${tourId}`} className="flex-1 sm:flex-none">
+                  <NavigationLink href={`/dashboard/tours/${tourId}`} message="Loading..." className="flex-1 sm:flex-none">
                     <Button type="button" variant="outline" className="w-full sm:w-auto">
                       Cancel
                     </Button>
-                  </Link>
+                  </NavigationLink>
                 </div>
               </form>
             </Form>

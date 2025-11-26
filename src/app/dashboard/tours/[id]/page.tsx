@@ -11,7 +11,6 @@ import {
   UserIcon,
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AnimatedTableRow } from '@/components/dashboard/AnimatedTableRow';
 import { CopyLinkButton } from '@/components/dashboard/CopyLinkButton';
@@ -20,6 +19,7 @@ import { AnimatedWrapper } from '@/components/ui/animated';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Table,
   TableBody,
@@ -81,7 +81,7 @@ export default async function TourDetailsPage({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <Link href="/dashboard">
+                <NavigationLink href="/dashboard" message="Loading...">
                   <Button
                     variant="outline"
                     size="sm"
@@ -91,7 +91,7 @@ export default async function TourDetailsPage({
                     <span className="hidden sm:inline">Back to Tours</span>
                     <span className="sm:hidden">Back</span>
                   </Button>
-                </Link>
+                </NavigationLink>
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                     {tour.name}
@@ -102,7 +102,7 @@ export default async function TourDetailsPage({
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/dashboard/tours/${id}/edit`} className="flex-1 sm:flex-none">
+                <NavigationLink href={`/dashboard/tours/${id}/edit`} message="Loading..." className="flex-1 sm:flex-none">
                   <Button
                     variant="outline"
                     size="sm"
@@ -112,8 +112,8 @@ export default async function TourDetailsPage({
                     <span className="hidden sm:inline">Edit Tour</span>
                     <span className="sm:hidden">Edit</span>
                   </Button>
-                </Link>
-                <Link href={`/dashboard/tours/${id}/view`} className="flex-1 sm:flex-none">
+                </NavigationLink>
+                <NavigationLink href={`/dashboard/tours/${id}/view`} message="Loading..." className="flex-1 sm:flex-none">
                   <Button
                     variant="outline"
                     size="sm"
@@ -123,7 +123,7 @@ export default async function TourDetailsPage({
                     <span className="hidden sm:inline">View as User</span>
                     <span className="sm:hidden">View</span>
                   </Button>
-                </Link>
+                </NavigationLink>
                 <CopyLinkButton tourId={id} isActive={tour.status === 'active'} />
               </div>
             </div>
@@ -136,7 +136,7 @@ export default async function TourDetailsPage({
             <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
+                  <CardTitle className="text-xl flex items-center gap-2 mt-4">
                     <NavigationIcon className="size-5 text-primary" />
                     Tour Information
                   </CardTitle>
@@ -199,7 +199,7 @@ export default async function TourDetailsPage({
             <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
+                  <CardTitle className="text-xl flex items-center gap-2 mt-4">
                     <MapPinIcon className="size-5 text-primary" />
                     Destinations
                     <Badge variant="secondary" className="ml-2">
@@ -210,12 +210,12 @@ export default async function TourDetailsPage({
                     All destinations for this tour
                   </CardDescription>
                 </div>
-                <Link href={`/dashboard/tours/${id}/destinations/new`}>
+                <NavigationLink href={`/dashboard/tours/${id}/destinations/new`} message="Loading...">
                   <Button className="shadow-md hover:shadow-lg transition-all duration-300">
                     <PlusIcon className="size-4 mr-2" />
                     Add Destination
                   </Button>
-                </Link>
+                </NavigationLink>
               </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
@@ -233,12 +233,12 @@ export default async function TourDetailsPage({
                               Add your first destination to start building your tour itinerary.
                             </p>
                           </div>
-                          <Link href={`/dashboard/tours/${id}/destinations/new`}>
+                          <NavigationLink href={`/dashboard/tours/${id}/destinations/new`} message="Loading...">
                             <Button size="lg" className="shadow-md hover:shadow-lg transition-all duration-300">
                               <PlusIcon className="size-4 mr-2" />
                               Add Destination
                             </Button>
-                          </Link>
+                          </NavigationLink>
                         </div>
                       </div>
                     </AnimatedWrapper>

@@ -4,6 +4,7 @@ import moment from 'moment';
 import Papa from 'papaparse';
 import { db } from '@/db';
 import { destinations, tours } from '@/db/schema';
+import { processImageUrls } from '@/utils/image-utils';
 
 type CSVRow = {
   tour_name?: string;
@@ -179,59 +180,62 @@ export async function bulkUploadTours(formData: FormData): Promise<BulkUploadRes
     const tourId = newTour.id;
 
     // Process destinations from all rows
-    const destinationValues = rows
-      .map((row) => {
-        const destinationName = row.destination_name?.trim();
-        const destinationDate = row.destination_date?.trim();
-        const startTime = row.start_time?.trim();
-        const endTime = row.end_time?.trim();
-        const slotLabel = row.slot_label?.trim();
-        const imagesStr = row.images?.trim() || '';
-        const latStr = row.lat?.trim();
-        const lngStr = row.lng?.trim();
-        const description = row.destination_description?.trim() || null;
+    const destinationValuesPromises = rows.map(async (row) => {
+      const destinationName = row.destination_name?.trim();
+      const destinationDate = row.destination_date?.trim();
+      const startTime = row.start_time?.trim();
+      const endTime = row.end_time?.trim();
+      const slotLabel = row.slot_label?.trim();
+      const imagesStr = row.images?.trim() || '';
+      const latStr = row.lat?.trim();
+      const lngStr = row.lng?.trim();
+      const description = row.destination_description?.trim() || null;
 
-        // Skip rows without required fields
-        if (!destinationName || !destinationDate) {
-          return null;
+      // Skip rows without required fields
+      if (!destinationName || !destinationDate) {
+        return null;
+      }
+
+      // Parse images (split by |)
+      const imageUrls = imagesStr
+        ? imagesStr.split('|').map(url => url.trim()).filter(Boolean)
+        : [];
+      // Process images: download from Google Drive and upload to Supabase if needed
+      const images = await processImageUrls(imageUrls, 'destinations');
+
+      // Parse coordinates
+      let coordinate = null;
+      if (latStr && lngStr) {
+        const lat = Number.parseFloat(latStr);
+        const lng = Number.parseFloat(lngStr);
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          coordinate = { lat, lng };
         }
+      }
 
-        // Parse images (split by |)
-        const images = imagesStr
-          ? imagesStr.split('|').map(url => url.trim()).filter(Boolean)
-          : [];
+      // Build time slot object if times are provided
+      const timeSlot
+        = startTime && endTime
+          ? {
+              start_time: startTime,
+              end_time: endTime,
+              slot_label: slotLabel || undefined,
+            }
+          : null;
 
-        // Parse coordinates
-        let coordinate = null;
-        if (latStr && lngStr) {
-          const lat = Number.parseFloat(latStr);
-          const lng = Number.parseFloat(lngStr);
-          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-            coordinate = { lat, lng };
-          }
-        }
+      return {
+        tourId,
+        name: destinationName,
+        date: destinationDate,
+        timeSlot,
+        images,
+        coordinate,
+        description,
+        metadata: {},
+      };
+    });
 
-        // Build time slot object if times are provided
-        const timeSlot
-          = startTime && endTime
-            ? {
-                start_time: startTime,
-                end_time: endTime,
-                slot_label: slotLabel || undefined,
-              }
-            : null;
-
-        return {
-          tourId,
-          name: destinationName,
-          date: destinationDate,
-          timeSlot,
-          images,
-          coordinate,
-          description,
-          metadata: {},
-        };
-      })
+    const destinationValues = (await Promise.all(destinationValuesPromises))
       .filter((value): value is NonNullable<typeof value> => value !== null);
 
     if (destinationValues.length === 0) {
@@ -359,69 +363,71 @@ async function handleGeoJSONUpload(file: File): Promise<BulkUploadResult> {
     const tourId = newTour.id;
 
     // Process destinations from features
-    const destinationValues = geoJSON.features
-      .map((feature) => {
-        const props = feature.properties;
-        const name = props.Name?.trim();
-        const day = props.Day?.trim();
-        const comment = props.Comment?.trim() || null;
-        const location = props.Location?.trim() || null;
-        const type = props.Type?.trim() || null;
-        const price = props.Price ?? null;
-        const website = props.Website?.trim() || null;
-        const imageUrl = props.Image_URL?.trim() || null;
-        const iconUrl = props.icon_url?.trim() || null;
+    const destinationValuesPromises = geoJSON.features.map(async (feature) => {
+      const props = feature.properties;
+      const name = props.Name?.trim();
+      const day = props.Day?.trim();
+      const comment = props.Comment?.trim() || null;
+      const location = props.Location?.trim() || null;
+      const type = props.Type?.trim() || null;
+      const price = props.Price ?? null;
+      const website = props.Website?.trim() || null;
+      const imageUrl = props.Image_URL?.trim() || null;
+      const iconUrl = props.icon_url?.trim() || null;
 
-        // Skip features without required fields
-        if (!name || !day) {
-          return null;
+      // Skip features without required fields
+      if (!name || !day) {
+        return null;
+      }
+
+      // Extract coordinates from geometry (GeoJSON uses [lng, lat])
+      let coordinate = null;
+      if (feature.geometry?.type === 'Point' && Array.isArray(feature.geometry.coordinates)) {
+        const [lng, lat] = feature.geometry.coordinates;
+        if (typeof lng === 'number' && typeof lat === 'number'
+          && !Number.isNaN(lng) && !Number.isNaN(lat)) {
+          coordinate = { lat, lng };
         }
+      }
 
-        // Extract coordinates from geometry (GeoJSON uses [lng, lat])
-        let coordinate = null;
-        if (feature.geometry?.type === 'Point' && Array.isArray(feature.geometry.coordinates)) {
-          const [lng, lat] = feature.geometry.coordinates;
-          if (typeof lng === 'number' && typeof lat === 'number'
-            && !Number.isNaN(lng) && !Number.isNaN(lat)) {
-            coordinate = { lat, lng };
-          }
+      // Fallback to properties Lat/Long if geometry coordinates are not available
+      if (!coordinate && props.Lat && props.Long) {
+        const lat = Number.parseFloat(String(props.Lat));
+        const lng = Number.parseFloat(String(props.Long));
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          coordinate = { lat, lng };
         }
+      }
 
-        // Fallback to properties Lat/Long if geometry coordinates are not available
-        if (!coordinate && props.Lat && props.Long) {
-          const lat = Number.parseFloat(String(props.Lat));
-          const lng = Number.parseFloat(String(props.Long));
-          if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-            coordinate = { lat, lng };
-          }
-        }
+      // Build images array and process Google Drive links
+      const imageUrls = imageUrl ? [imageUrl] : [];
+      const images = await processImageUrls(imageUrls, 'destinations');
 
-        // Build images array
-        const images = imageUrl ? [imageUrl] : [];
+      // Build metadata with additional properties
+      const metadata: Record<string, unknown> = {
+        type: type || undefined,
+        location: location || undefined,
+        website: website || undefined,
+        iconUrl: iconUrl || undefined,
+      };
 
-        // Build metadata with additional properties
-        const metadata: Record<string, unknown> = {
-          type: type || undefined,
-          location: location || undefined,
-          website: website || undefined,
-          iconUrl: iconUrl || undefined,
-        };
+      if (price !== null && price !== undefined) {
+        metadata.price = price;
+      }
 
-        if (price !== null && price !== undefined) {
-          metadata.price = price;
-        }
+      return {
+        tourId,
+        name,
+        date: day,
+        timeSlot: null,
+        images,
+        coordinate,
+        description: comment,
+        metadata,
+      };
+    });
 
-        return {
-          tourId,
-          name,
-          date: day,
-          timeSlot: null,
-          images,
-          coordinate,
-          description: comment,
-          metadata,
-        };
-      })
+    const destinationValues = (await Promise.all(destinationValuesPromises))
       .filter((value): value is NonNullable<typeof value> => value !== null);
 
     if (destinationValues.length === 0) {

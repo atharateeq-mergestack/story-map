@@ -3,12 +3,12 @@
 import type { TourFilters } from '@/components/dashboard/TourFilterBar';
 import { CalendarIcon, MapPinIcon } from 'lucide-react';
 import moment from 'moment';
-import Link from 'next/link';
 import { useMemo } from 'react';
 import { AnimatedTableRow } from '@/components/dashboard/AnimatedTableRow';
 import { TourActions } from '@/components/dashboard/TourActions';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Table,
   TableBody,
@@ -125,10 +125,10 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
 
       {/* Tours Table */}
       <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b p-4 sm:p-6">
+        <CardHeader className="bg-linear-to-r from-primary/5 to-primary/10 border-b p-4 sm:p-6 rounded-t-lg mb-0">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg sm:text-xl md:text-2xl flex items-center gap-2">
+              <CardTitle className="text-lg sm:text-xl md:text-2xl flex items-center gap-2 mt-0">
                 Tours Management
               </CardTitle>
               <CardDescription className="mt-1 text-sm sm:text-base">
@@ -170,12 +170,13 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                       <Card key={tour.id} className="border-2 hover:shadow-md transition-all">
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between">
-                            <Link
+                            <NavigationLink
                               href={`/dashboard/tours/${tour.id}`}
+                              message="Loading tour..."
                               className="hover:text-primary transition-colors duration-200 font-semibold hover:underline flex-1"
                             >
                               <h3 className="text-base font-semibold max-w-[80%] truncate">{tour.name}</h3>
-                            </Link>
+                            </NavigationLink>
                             <Badge
                               variant={
                                 tour.status === 'active' ? 'success' : 'secondary'
@@ -251,12 +252,13 @@ export function ToursTable({ tours, activeTourId, filters }: ToursTableProps) {
                         {filteredTours.map((tour, index) => (
                           <AnimatedTableRow key={tour.id} index={index}>
                             <TableCell className="font-medium">
-                              <Link
+                              <NavigationLink
                                 href={`/dashboard/tours/${tour.id}`}
+                                message="Loading tour..."
                                 className="hover:text-primary transition-colors duration-200 font-semibold hover:underline"
                               >
                                 {tour.name}
-                              </Link>
+                              </NavigationLink>
                             </TableCell>
                             <TableCell>
                               <Badge

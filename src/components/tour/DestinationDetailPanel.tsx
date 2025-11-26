@@ -90,9 +90,9 @@ export function DestinationDetailPanel({
         {destination.description && (
           <Card>
             <CardHeader>
-              <CardTitle>Description</CardTitle>
+              <CardTitle className="mt-4">Description</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 pt-0">
               <Text>{destination.description}</Text>
             </CardContent>
           </Card>
@@ -102,7 +102,7 @@ export function DestinationDetailPanel({
         {destination.images && destination.images.length > 0 && (
           <Card>
             <CardHeader className="p-3 sm:p-4">
-              <CardTitle className="text-sm sm:text-base">Images</CardTitle>
+              <CardTitle className="text-sm sm:text-base mt-4">Images</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 pt-0">
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
@@ -128,9 +128,9 @@ export function DestinationDetailPanel({
         {destination.coordinate && (
           <Card>
             <CardHeader>
-              <CardTitle>Location</CardTitle>
+              <CardTitle className="mt-4">Location</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-4 pt-0">
               <Text size="sm" color="muted">
                 Latitude:
                 {' '}

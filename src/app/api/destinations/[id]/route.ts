@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { destinations } from '@/db/schema';
 import { createClient } from '@/lib/supabase/server';
+import { processImageUrls } from '@/utils/image-utils';
 
 // GET - Get a single destination by ID
 export async function GET(
@@ -61,10 +62,15 @@ export async function PATCH(
       );
     }
 
+    // Process images if provided: download from Google Drive and upload to Supabase if needed
     const updateData: Partial<typeof destinations.$inferInsert> = {
       ...body,
       updatedAt: new Date(),
     };
+
+    if (body.images && Array.isArray(body.images)) {
+      updateData.images = await processImageUrls(body.images, 'destinations');
+    }
 
     const updatedDestination = await db
       .update(destinations)

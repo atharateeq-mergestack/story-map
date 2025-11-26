@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { getCurrentUser, getSession, getUserProfile } from '@/actions/auth';
 import { ClientState } from '@/components/common/ClientState';
+import { NavigationLoader } from '@/components/common/NavigationLoader';
+import { LoaderOverlay } from '@/components/ui/loader-overlay';
 import { Providers } from '@/provider/providers';
 import '@/styles/global.css';
 
@@ -42,6 +44,8 @@ export default async function RootLayout({
       >
         <Providers>
           <ClientState props={props} />
+          <NavigationLoader />
+          <LoaderOverlay />
           {children}
         </Providers>
       </body>

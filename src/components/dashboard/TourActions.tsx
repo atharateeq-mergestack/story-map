@@ -1,12 +1,12 @@
 'use client';
 
 import { CheckCircleIcon, EyeIcon, TrashIcon, XCircleIcon } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Tooltip,
   TooltipContent,
@@ -134,11 +134,11 @@ export function TourActions({
         <div className="flex items-center justify-end gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={`/dashboard/tours/${tourId}`}>
+              <NavigationLink href={`/dashboard/tours/${tourId}`} message="Loading tour...">
                 <Button variant="outline" size="sm" disabled={loading !== null}>
                   <EyeIcon className="size-4" />
                 </Button>
-              </Link>
+              </NavigationLink>
             </TooltipTrigger>
             <TooltipContent>
               <p>View tour details and destinations</p>

@@ -2,8 +2,8 @@
 
 import type { TourFilters } from './TourFilterBar';
 import { PlusIcon } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import { BulkUploadButton } from './BulkUploadButton';
 import { TourFilterMenu } from './TourFilterMenu';
 
@@ -17,12 +17,12 @@ export function DashboardActions({ filters, onFiltersChange }: DashboardActionsP
     <div className="flex items-center gap-2">
       <TourFilterMenu filters={filters} onFiltersChange={onFiltersChange} />
       <BulkUploadButton />
-      <Link href="/dashboard/tours/new">
+      <NavigationLink href="/dashboard/tours/new" message="Creating new tour...">
         <Button className="shadow-md hover:shadow-lg transition-all duration-300">
           <PlusIcon className="size-4 mr-2" />
           <span className="hidden sm:block">Create New Tour </span>
         </Button>
-      </Link>
+      </NavigationLink>
     </div>
   );
 }
