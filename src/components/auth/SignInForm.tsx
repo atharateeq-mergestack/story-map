@@ -92,7 +92,7 @@ export function SignInForm() {
               )}
             />
 
-            {error && (
+            {error && error !== 'NEXT_REDIRECT' && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>

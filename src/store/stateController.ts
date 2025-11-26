@@ -54,13 +54,16 @@ export class StateController<T extends Record<string, any>> {
 
   useHydration(state: T) {
     const hydratedStates: any[] = [];
-    Object.keys(state).forEach((key) => {
+    // Always hydrate based on initialState keys to ensure consistent hook count
+    Object.keys(this.initialState).forEach((key) => {
       this.getFocusItem(key);
-      hydratedStates.push([this.focusState[key], state[key]]);
+      // Use state value if provided, otherwise use initial state value
+      const value = key in state ? state[key] : this.initialState[key];
+      hydratedStates.push([this.focusState[key], value]);
     });
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useHydrateAtoms(hydratedStates);
-    this.updateState(state);
+    // Note: updateState is called separately in useEffect to avoid render-time state updates
   }
 
   setState(newState: Partial<T>) {
