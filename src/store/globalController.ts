@@ -2,10 +2,14 @@ import { StateController } from '@/store/stateController';
 
 type IGlobalState = {
   count: number;
+  isLoading: boolean;
+  loadingMessage?: string;
 };
 
 const globalInitialState: IGlobalState = {
   count: 0,
+  isLoading: false,
+  loadingMessage: undefined,
 };
 
 class GlobalController extends StateController<IGlobalState> {
@@ -25,6 +29,21 @@ class GlobalController extends StateController<IGlobalState> {
 
   reset() {
     this.updateState({ count: 0 });
+  }
+
+  setLoading(isLoading: boolean, message?: string) {
+    this.updateState({
+      isLoading,
+      loadingMessage: message,
+    });
+  }
+
+  startLoading(message?: string) {
+    this.setLoading(true, message);
+  }
+
+  stopLoading() {
+    this.setLoading(false);
   }
 }
 

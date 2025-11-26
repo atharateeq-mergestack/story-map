@@ -45,7 +45,61 @@
 
   --color-destructive: var(--destructive);
 
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-destructive-light: var(--destructive-light);
+
+  --color-destructive-dark: var(--destructive-dark);
+
+  --color-info: var(--info);
+
+  --color-info-foreground: var(--info-foreground);
+
+  --color-info-light: var(--info-light);
+
+  --color-info-dark: var(--info-dark);
+
+  --color-success: var(--success);
+
+  --color-success-foreground: var(--success-foreground);
+
+  --color-success-light: var(--success-light);
+
+  --color-success-dark: var(--success-dark);
+
+  --color-warning: var(--warning);
+
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-warning-light: var(--warning-light);
+
+  --color-warning-dark: var(--warning-dark);
+
+  --color-primary-light: var(--primary-light);
+
+  --color-primary-dark: var(--primary-dark);
+
+  --color-secondary-light: var(--secondary-light);
+
+  --color-secondary-dark: var(--secondary-dark);
+
+  --color-background-secondary: var(--background-secondary);
+
+  --color-background-tertiary: var(--background-tertiary);
+
+  --color-text-primary: var(--text-primary);
+
+  --color-text-secondary: var(--text-secondary);
+
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-text-inverse: var(--text-inverse);
+
   --color-border: var(--border);
+
+  --color-border-light: var(--border-light);
+
+  --color-border-dark: var(--border-dark);
 
   --color-input: var(--input);
 
@@ -111,7 +165,61 @@
 
   --destructive: oklch(0.577 0.245 27.325);
 
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --destructive-light: oklch(0.85 0.15 27.325);
+
+  --destructive-dark: oklch(0.45 0.2 27.325);
+
+  --info: oklch(0.6 0.15 240);
+
+  --info-foreground: oklch(0.985 0 0);
+
+  --info-light: oklch(0.85 0.1 240);
+
+  --info-dark: oklch(0.4 0.15 240);
+
+  --success: oklch(0.65 0.2 145);
+
+  --success-foreground: oklch(0.985 0 0);
+
+  --success-light: oklch(0.85 0.15 145);
+
+  --success-dark: oklch(0.45 0.2 145);
+
+  --warning: oklch(0.75 0.18 85);
+
+  --warning-foreground: oklch(0.145 0 0);
+
+  --warning-light: oklch(0.9 0.12 85);
+
+  --warning-dark: oklch(0.55 0.2 85);
+
+  --primary-light: oklch(0.3 0 0);
+
+  --primary-dark: oklch(0.1 0 0);
+
+  --secondary-light: oklch(0.99 0 0);
+
+  --secondary-dark: oklch(0.9 0 0);
+
+  --background-secondary: oklch(0.98 0 0);
+
+  --background-tertiary: oklch(0.96 0 0);
+
+  --text-primary: oklch(0.145 0 0);
+
+  --text-secondary: oklch(0.4 0 0);
+
+  --text-tertiary: oklch(0.556 0 0);
+
+  --text-inverse: oklch(0.985 0 0);
+
   --border: oklch(0.922 0 0);
+
+  --border-light: oklch(0.96 0 0);
+
+  --border-dark: oklch(0.85 0 0);
 
   --input: oklch(0.922 0 0);
 
@@ -175,7 +283,61 @@
 
   --destructive: oklch(0.704 0.191 22.216);
 
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --destructive-light: oklch(0.8 0.15 22.216);
+
+  --destructive-dark: oklch(0.55 0.2 22.216);
+
+  --info: oklch(0.55 0.18 240);
+
+  --info-foreground: oklch(0.985 0 0);
+
+  --info-light: oklch(0.7 0.12 240);
+
+  --info-dark: oklch(0.35 0.18 240);
+
+  --success: oklch(0.6 0.22 145);
+
+  --success-foreground: oklch(0.985 0 0);
+
+  --success-light: oklch(0.75 0.18 145);
+
+  --success-dark: oklch(0.4 0.22 145);
+
+  --warning: oklch(0.7 0.2 85);
+
+  --warning-foreground: oklch(0.145 0 0);
+
+  --warning-light: oklch(0.85 0.15 85);
+
+  --warning-dark: oklch(0.5 0.22 85);
+
+  --primary-light: oklch(0.95 0 0);
+
+  --primary-dark: oklch(0.85 0 0);
+
+  --secondary-light: oklch(0.35 0 0);
+
+  --secondary-dark: oklch(0.2 0 0);
+
+  --background-secondary: oklch(0.18 0 0);
+
+  --background-tertiary: oklch(0.22 0 0);
+
+  --text-primary: oklch(0.985 0 0);
+
+  --text-secondary: oklch(0.75 0 0);
+
+  --text-tertiary: oklch(0.6 0 0);
+
+  --text-inverse: oklch(0.145 0 0);
+
   --border: oklch(1 0 0 / 10%);
+
+  --border-light: oklch(1 0 0 / 5%);
+
+  --border-dark: oklch(1 0 0 / 20%);
 
   --input: oklch(1 0 0 / 15%);
 
@@ -214,5 +376,104 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  /* Responsive typography base */
+  html {
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  /* Smooth transitions for theme switching */
+  *,
+  *::before,
+  *::after {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
