@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   description: 'Your all-in-one platform for productivity and collaboration',
 };
 
+// Force dynamic rendering since we use cookies for authentication
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: Readonly<{

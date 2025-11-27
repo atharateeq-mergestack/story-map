@@ -5,6 +5,9 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { ThemeToggleButton } from '@/components/ui/theme/ThemeToggleButton';
 import { isAuthenticated } from '@/lib/supabase/server-auth';
 
+// Force dynamic rendering since we use cookies for authentication
+export const dynamic = 'force-dynamic';
+
 export default async function LandingPage() {
   // Check if user is authenticated
   const authenticated = await isAuthenticated();

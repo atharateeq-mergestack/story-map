@@ -55,6 +55,7 @@ export function StaggeredList({
   return (
     <div className={className}>
       {Array.isArray(children)
+        // eslint-disable-next-line react/no-children-map
         ? Children.map(children, (child, index) => {
             // Use the child's key if it's a valid React element, otherwise use index
             const key = isValidElement(child) && child.key

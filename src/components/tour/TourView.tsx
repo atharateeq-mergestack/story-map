@@ -85,6 +85,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         }
       }
       const newActiveDate = dates[currentActiveIndex] || null;
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setActiveDate((prevDate) => {
         // Only update if the date actually changed
         return prevDate !== newActiveDate ? newActiveDate : prevDate;

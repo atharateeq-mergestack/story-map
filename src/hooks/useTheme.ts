@@ -40,7 +40,9 @@ export function useTheme() {
 
     const resolved = resolveTheme();
     // Use functional updates to avoid warnings
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
     setThemeState(() => initialTheme);
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
     setResolvedTheme(() => resolved);
     applyTheme(resolved);
 
