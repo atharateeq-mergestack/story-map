@@ -41,7 +41,7 @@ export default async function LandingPage() {
 
         {/* Features Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 px-4">
-          <Card>
+          <Card className="py-4">
             <CardHeader>
               <CardTitle>Secure</CardTitle>
               <CardDescription>
@@ -49,7 +49,7 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="py-4">
             <CardHeader>
               <CardTitle>Fast</CardTitle>
               <CardDescription>
@@ -57,7 +57,7 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="py-4">
             <CardHeader>
               <CardTitle>Reliable</CardTitle>
               <CardDescription>

@@ -2,8 +2,6 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowLeftIcon } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -20,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Select,
   SelectContent,
@@ -28,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useNavigation } from '@/hooks/useNavigation';
 
 const tourSchema = yup.object({
   name: yup.string().required('Tour name is required'),
@@ -42,7 +42,7 @@ const tourSchema = yup.object({
 type TourFormData = yup.InferType<typeof tourSchema>;
 
 export default function CreateTourPage() {
-  const router = useRouter();
+  const { navigate } = useNavigation();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -78,7 +78,7 @@ export default function CreateTourPage() {
       }
 
       const result = await response.json();
-      router.push(`/dashboard/tours/${result.tour.id}`);
+      navigate(`/dashboard/tours/${result.tour.id}`, { message: 'Loading tour...' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create tour');
     } finally {
@@ -90,12 +90,12 @@ export default function CreateTourPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <Link href="/dashboard">
+          <NavigationLink href="/dashboard" message="Loading...">
             <Button variant="outline" size="sm" className="shadow-sm hover:shadow-md transition-all duration-300 text-xs sm:text-sm w-full sm:w-auto">
               <ArrowLeftIcon className="size-3 sm:size-4 mr-1.5 sm:mr-2" />
               Back to Tours
             </Button>
-          </Link>
+          </NavigationLink>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Create New Tour</h1>
         </div>
 
@@ -253,11 +253,11 @@ export default function CreateTourPage() {
                   <Button type="submit" disabled={loading} className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
                     {loading ? 'Creating...' : 'Create Tour'}
                   </Button>
-                  <Link href="/dashboard" className="flex-1 sm:flex-none">
+                  <NavigationLink href="/dashboard" message="Loading..." className="flex-1 sm:flex-none">
                     <Button type="button" variant="outline" className="w-full sm:w-auto">
                       Cancel
                     </Button>
-                  </Link>
+                  </NavigationLink>
                 </div>
               </form>
             </Form>

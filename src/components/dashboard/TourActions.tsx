@@ -6,13 +6,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
-import { NavigationLink } from '@/components/ui/navigation-link';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useNavigation } from '@/hooks/useNavigation';
 
 type TourActionsProps = {
   tourId: string;
@@ -27,6 +27,7 @@ export function TourActions({
 }: TourActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState<'activate' | 'deactivate' | 'delete' | null>(null);
+  const { navigate } = useNavigation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
@@ -134,11 +135,9 @@ export function TourActions({
         <div className="flex items-center justify-end gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <NavigationLink href={`/dashboard/tours/${tourId}`} message="Loading tour...">
-                <Button variant="outline" size="sm" disabled={loading !== null}>
-                  <EyeIcon className="size-4" />
-                </Button>
-              </NavigationLink>
+              <Button variant="outline" size="sm" disabled={loading !== null} onClick={() => navigate(`/dashboard/tours/${tourId}`)}>
+                <EyeIcon className="size-4" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>View tour details and destinations</p>
