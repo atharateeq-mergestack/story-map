@@ -1,23 +1,17 @@
 'use client';
 
 import { X } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heading } from '@/components/ui/common/Heading';
-import { Text } from '@/components/ui/common/Text';
-import { formatDate } from '@/lib/utils';
+import { ImageCarousel } from './ImageCarousel';
 
 type Destination = {
   id: string;
   name: string;
-  date: string;
   timeSlot: {
     start_time: string;
     end_time: string;
     slot_label?: string;
   } | null;
-  coordinate: { lat: number; lng: number } | null;
   description: string | null;
   images?: string[];
 };
@@ -27,129 +21,43 @@ type DestinationDetailPanelProps = {
   onClose: () => void;
 };
 
-export function DestinationDetailPanel({
-  destination,
-  onClose,
-}: DestinationDetailPanelProps) {
+export function DestinationDetailPanel({ destination, onClose }: DestinationDetailPanelProps) {
   return (
-    <div className="flex flex-col bg-background border rounded-lg shadow-lg" style={{ height: 'calc(100vh - 6rem)', minHeight: '400px' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-        <Heading level={3} size="lg" weight="bold" className="text-base sm:text-lg">
-          Destination Details
-        </Heading>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-7 w-7 sm:h-8 sm:w-8"
-        >
-          <X className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
+    <div className="bg-background border border-foreground/20 rounded-lg overflow-hidden shadow-lg">
+      {/* Media / Carousel */}
+      <div className="w-full h-64 sm:h-80 bg-gray-100">
+        <ImageCarousel images={destination.images || []} title={destination.name} />
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 min-h-0">
-        {/* Name */}
-        <div>
-          <Heading level={2} size="2xl" weight="bold" className="mb-1.5 sm:mb-2 text-lg sm:text-xl md:text-2xl">
-            {destination.name}
-          </Heading>
-          <Text size="sm" color="muted" className="text-xs sm:text-sm">
-            {formatDate(destination.date)}
-          </Text>
-        </div>
-
-        {/* Time Slot */}
+      <div className="p-4 space-y-4">
+        {/* Time */}
         {destination.timeSlot && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text>
-                {destination.timeSlot.start_time}
-                {' '}
-                -
-                {' '}
-                {destination.timeSlot.end_time}
-                {destination.timeSlot.slot_label && (
-                  <>
-                    {' '}
-                    (
-                    {destination.timeSlot.slot_label}
-                    )
-                  </>
-                )}
-              </Text>
-            </CardContent>
-          </Card>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              {destination.timeSlot.start_time}
+              {' '}
+              -
+              {destination.timeSlot.end_time}
+              {destination.timeSlot.slot_label && ` (${destination.timeSlot.slot_label})`}
+            </h3>
+          </div>
         )}
 
         {/* Description */}
         {destination.description && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="mt-4">Description</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <Text>{destination.description}</Text>
-            </CardContent>
-          </Card>
+          <p className="text-sm text-foreground/80 leading-relaxed">{destination.description}</p>
         )}
 
-        {/* Images */}
-        {destination.images && destination.images.length > 0 && (
-          <Card>
-            <CardHeader className="p-3 sm:p-4">
-              <CardTitle className="text-sm sm:text-base mt-4">Images</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                {destination.images.map(image => (
-                  <div
-                    key={image}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted relative"
-                  >
-                    <Image
-                      src={image}
-                      alt={`${destination.name}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Coordinates */}
-        {destination.coordinate && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="mt-4">Location</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <Text size="sm" color="muted">
-                Latitude:
-                {' '}
-                {destination.coordinate.lat.toFixed(6)}
-              </Text>
-              <Text size="sm" color="muted">
-                Longitude:
-                {' '}
-                {destination.coordinate.lng.toFixed(6)}
-              </Text>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="p-3 sm:p-4 border-t shrink-0">
-        <Button onClick={onClose} className="w-full text-sm sm:text-base">
-          Back to Overview
+        {/* Close */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="mt-4 w-full gap-2 bg-transparent flex justify-center items-center"
+        >
+          <X size={16} />
+          Back to overview
         </Button>
       </div>
     </div>
