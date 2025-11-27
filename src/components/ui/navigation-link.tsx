@@ -34,6 +34,8 @@ export function NavigationLink({
     if (href !== pathname) {
       globalController.startLoading(message || 'Loading...');
     }
+    // Don't prevent default - let the link navigate normally
+    // The event will continue to propagate for TooltipTrigger if wrapped
   };
 
   return (

@@ -1,7 +1,6 @@
 'use client';
 
 import { EditIcon, TrashIcon } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useNavigation } from '@/hooks/useNavigation';
 
 type DestinationActionsProps = {
   destinationId: string;
@@ -26,6 +26,7 @@ export function DestinationActions({
   tourId,
 }: DestinationActionsProps) {
   const router = useRouter();
+  const { navigate } = useNavigation();
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -59,15 +60,14 @@ export function DestinationActions({
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={`/dashboard/tours/${tourId}/destinations/${destinationId}/edit`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={loading}
-                >
-                  <EditIcon className="size-4" />
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/dashboard/tours/${tourId}/destinations/${destinationId}/edit`)}
+                disabled={loading}
+              >
+                <EditIcon className="size-4" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <p>Edit this destination</p>

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NavigationLink } from '@/components/ui/navigation-link';
 import { ThemeToggle } from '@/components/ui/theme/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import userController from '@/store/userController';
@@ -45,22 +45,24 @@ export function Navigation() {
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-6">
-          <Link href="/dashboard" className="text-base sm:text-lg font-semibold">
+          <NavigationLink href="/dashboard" message="Loading..." className="text-base sm:text-lg font-semibold">
             Tour Map
-          </Link>
+          </NavigationLink>
           <div className="hidden md:flex items-center gap-4">
-            <Link
+            <NavigationLink
               href="/dashboard"
+              message="Loading..."
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Dashboard
-            </Link>
-            <Link
+            </NavigationLink>
+            <NavigationLink
               href="/profile"
+              message="Loading..."
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Profile
-            </Link>
+            </NavigationLink>
           </div>
         </div>
 
@@ -88,10 +90,10 @@ export function Navigation() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile">Profile</Link>
+                <NavigationLink href="/profile" message="Loading...">Profile</NavigationLink>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard">Dashboard</Link>
+                <NavigationLink href="/dashboard" message="Loading...">Dashboard</NavigationLink>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>

@@ -2,7 +2,7 @@
 
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowLeftIcon } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -21,6 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { NavigationLink } from '@/components/ui/navigation-link';
 import { Textarea } from '@/components/ui/textarea';
+import { useNavigation } from '@/hooks/useNavigation';
 
 const destinationSchema = yup.object({
   name: yup.string().required('Destination name is required'),
@@ -37,7 +38,7 @@ const destinationSchema = yup.object({
 type DestinationFormData = yup.InferType<typeof destinationSchema>;
 
 export default function CreateDestinationPage() {
-  const router = useRouter();
+  const { navigate } = useNavigation();
   const params = useParams();
   const tourId = params.id as string;
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +110,7 @@ export default function CreateDestinationPage() {
         throw new Error(errorData.error || 'Failed to create destination');
       }
 
-      router.push(`/dashboard/tours/${tourId}`);
+      navigate(`/dashboard/tours/${tourId}`, { message: 'Loading tour...' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create destination');
     } finally {
