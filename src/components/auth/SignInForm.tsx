@@ -46,7 +46,7 @@ export function SignInForm() {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-ful p-4">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>

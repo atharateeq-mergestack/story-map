@@ -43,7 +43,7 @@ export function SignUpForm() {
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full p-4">
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
         <CardDescription>Sign up to get started with your account</CardDescription>
