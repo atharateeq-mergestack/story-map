@@ -14,6 +14,7 @@ type Destination = {
     slot_label?: string;
   } | null;
   description: string | null;
+  images?: string[];
 };
 
 type TourMapProps = {
@@ -23,12 +24,7 @@ type TourMapProps = {
   onMarkerClick?: (destinationId: string) => void;
 };
 
-export function TourMap({
-  destinations,
-  activeDestinationId,
-  mapboxAccessToken,
-  onMarkerClick,
-}: TourMapProps) {
+export function TourMap({ destinations, activeDestinationId, mapboxAccessToken, onMarkerClick }: TourMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -41,7 +37,6 @@ export function TourMap({
 
     mapboxgl.accessToken = mapboxAccessToken;
 
-    // Get all coordinates to calculate bounds
     const coordinates = destinations
       .filter(dest => dest.coordinate)
       .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
@@ -50,7 +45,6 @@ export function TourMap({
       return;
     }
 
-    // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -61,7 +55,6 @@ export function TourMap({
     map.current.on('load', () => {
       setIsMapLoaded(true);
 
-      // Fit map to show all destinations
       if (coordinates.length > 1) {
         const bounds = coordinates.reduce(
           (bounds, coord) => bounds.extend(coord),
@@ -80,20 +73,16 @@ export function TourMap({
     };
   }, [mapboxAccessToken, destinations]);
 
-  // Update markers when destinations change
   useEffect(() => {
     if (!map.current || !isMapLoaded) {
       return;
     }
 
-    // Remove existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Store event listeners for cleanup
     const clickHandlers: Array<{ element: HTMLElement; handler: () => void }> = [];
 
-    // Add markers for all destinations
     destinations.forEach((destination) => {
       if (!destination.coordinate) {
         return;
@@ -104,9 +93,7 @@ export function TourMap({
       el.style.width = '20px';
       el.style.height = '20px';
       el.style.borderRadius = '50%';
-      el.style.backgroundColor = activeDestinationId === destination.id
-        ? '#ef4444'
-        : '#3b82f6';
+      el.style.backgroundColor = activeDestinationId === destination.id ? '#000000' : '#cccccc';
       el.style.border = '3px solid white';
       el.style.cursor = 'pointer';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
@@ -122,43 +109,42 @@ export function TourMap({
         .setLngLat([destination.coordinate.lng, destination.coordinate.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(
-            `<div>
+            `<div style="padding: 8px;">
               <strong>${destination.name}</strong>
               ${destination.timeSlot
-                ? `<br/><small>${destination.timeSlot.start_time} - ${destination.timeSlot.end_time}</small>`
-                : ''}
+                  ? `<br/><small>${destination.timeSlot.start_time} - ${destination.timeSlot.end_time}</small>`
+                  : ''
+              }
               ${destination.description
-                ? `<br/><p style="margin-top: 8px; font-size: 12px;">${destination.description}</p>`
-                : ''}
+                  ? `<br/><p style="margin-top: 8px; font-size: 12px;">${destination.description}</p>`
+                  : ''
+              }
             </div>`,
           ),
         )
         .addTo(map.current!);
 
-      // Add click handler to marker
       const clickHandler = () => {
         if (onMarkerClick) {
           onMarkerClick(destination.id);
         }
       };
-      // eslint-disable-next-line react-web-api/no-leaked-event-listener
       el.addEventListener('click', clickHandler);
       clickHandlers.push({ element: el, handler: clickHandler });
 
       markersRef.current.push(marker);
 
-      // Fly to active destination
       if (activeDestinationId === destination.id) {
         map?.current?.flyTo({
           center: [destination.coordinate.lng, destination.coordinate.lat],
-          zoom: 10,
-          duration: 5000,
+          zoom: 14,
+          duration: 1000,
+          essential: true,
         });
         marker.togglePopup();
       }
     });
 
-    // Cleanup function to remove event listeners
     return () => {
       clickHandlers.forEach(({ element, handler }) => {
         element.removeEventListener('click', handler);
@@ -166,11 +152,5 @@ export function TourMap({
     };
   }, [destinations, activeDestinationId, isMapLoaded, onMarkerClick]);
 
-  return (
-    <div
-      ref={mapContainer}
-      className="h-full w-full"
-      style={{ minHeight: '600px' }}
-    />
-  );
+  return <div ref={mapContainer} className="h-full w-full" style={{ minHeight: '600px' }} />;
 }
