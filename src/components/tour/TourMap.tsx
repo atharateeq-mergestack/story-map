@@ -141,6 +141,7 @@ export function TourMap({
           onMarkerClick(destination.id);
         }
       };
+      // eslint-disable-next-line react-web-api/no-leaked-event-listener
       el.addEventListener('click', clickHandler);
       clickHandlers.push({ element: el, handler: clickHandler });
 

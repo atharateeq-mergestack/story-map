@@ -19,7 +19,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NavigationLink } from '@/components/ui/navigation-link';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigation } from '@/hooks/useNavigation';
 
@@ -339,11 +338,9 @@ export function EditDestinationForm({ destination, tourId }: EditDestinationForm
               <Button type="submit" disabled={loading} className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
                 {loading ? 'Updating...' : 'Update Destination'}
               </Button>
-              <NavigationLink href={`/dashboard/tours/${tourId}`} message="Loading..." className="flex-1 sm:flex-none">
-                <Button type="button" variant="outline" className="w-full sm:w-auto">
-                  Cancel
-                </Button>
-              </NavigationLink>
+              <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => navigate(`/dashboard/tours/${tourId}`)}>
+                Cancel
+              </Button>
             </div>
           </form>
         </Form>
@@ -351,4 +348,3 @@ export function EditDestinationForm({ destination, tourId }: EditDestinationForm
     </Card>
   );
 }
-
