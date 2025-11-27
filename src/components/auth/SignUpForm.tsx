@@ -3,10 +3,9 @@
 import type { SignUpFormData } from '@/lib/validations/signup.schema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { useState } from 'react';
+import { redirect, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,8 +15,7 @@ import { signUpSchema } from '@/lib/validations/signup.schema';
 
 export function SignUpForm() {
   const { signUp, loading } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   const form = useForm<SignUpFormData>({
     resolver: yupResolver(signUpSchema),
     defaultValues: {
@@ -29,16 +27,30 @@ export function SignUpForm() {
   });
 
   const onSubmit = async (data: SignUpFormData) => {
-    setError(null);
-
     try {
       // Sign up user with Supabase Auth
       // The signUp function will also create the profile via API
-      await signUp(data.email, data.password, data.fullName);
-      // Redirect to dashboard on success
-      redirect('/dashboard');
+      const result = await signUp(data.email, data.password, data.fullName);
+
+      // If email confirmation is required, show success message and redirect to login
+      if (result?.requiresEmailConfirmation) {
+        toast.success('Account created successfully!', {
+          description: 'Please check your email to confirm your account before signing in.',
+        });
+        router.push('/auth/login');
+        return;
+      }
+
+      // If email is already confirmed, redirect to dashboard
+      toast.success('Account created successfully!');
+      redirect('/auth/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account. Please try again.';
+      if (errorMessage !== 'NEXT_REDIRECT') {
+        toast.error('Sign up failed', {
+          description: errorMessage,
+        });
+      }
     }
   };
 
@@ -126,12 +138,6 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Creating account...' : 'Sign Up'}

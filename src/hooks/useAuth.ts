@@ -56,7 +56,15 @@ export function useAuth() {
         throw new Error(result.error || 'Failed to sign up');
       }
 
-      // After successful signup, sign in the user
+      // If email confirmation is required, don't try to sign in
+      if (result.requiresEmailConfirmation) {
+        return {
+          ...result,
+          requiresEmailConfirmation: true,
+        };
+      }
+
+      // After successful signup, sign in the user (only if email is already confirmed)
       const signInResponse = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
