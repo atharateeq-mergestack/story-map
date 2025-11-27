@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -84,8 +85,8 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       const newActiveDate = dates[currentActiveIndex] || null;
 
       if (newActiveDate !== activeDate && selectedDestination?.date !== newActiveDate) {
-        setSelectedDestination(null);
-        setActiveDestinationId(null);
+        setSelectedDestination(() => null);
+        setActiveDestinationId(() => null);
       }
 
       setActiveDate((prevDate) => {
@@ -272,7 +273,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         </nav>
       )}
 
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 pt-20 sm:pt-24">
+      <div className="">
         {dates.map((date, dayIndex) => {
           const dayDestinations = destinationsByDate[date] || [];
           const dayNumber = dayIndex + 1;
@@ -287,7 +288,13 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
               }}
               className="mb-12 sm:mb-16"
             >
-              <Heading level={2} size="2xl" weight="bold" className="mb-4 sm:mb-6 text-xl sm:text-2xl">
+              {/* Sticky Day Heading */}
+              <Heading
+                level={2}
+                size="2xl"
+                weight="bold"
+                className="mb-4 sm:mb-6 text-xl sm:text-2xl sticky top-0 bg-background z-10 py-2 border-b border-foreground/10"
+              >
                 Day
                 {' '}
                 {dayNumber}
@@ -297,48 +304,78 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                 {formatDate(date)}
               </Heading>
 
-              <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-                <div className="w-full lg:w-[30%] order-2 lg:order-1">
-                  {selectedDestination && selectedDestination.date === date
+              <div className="flex flex-col lg:flex-row">
+                {/* Left Panel: Destinations / Detail Panel */}
+                <div className="w-full lg:w-[30%] order-2 lg:order-1 space-y-3 sm:space-y-4">
+                  {dayDestinations.length === 0
                     ? (
-                        <div className="sticky top-20 sm:top-24">
-                          <DestinationDetailPanel destination={selectedDestination} onClose={handleBackToOverview} />
-                        </div>
+                        <Card>
+                          <CardContent className="p-4 sm:p-6 text-center">
+                            <Text color="muted" className="text-sm sm:text-base">
+                              No destinations for this day
+                            </Text>
+                          </CardContent>
+                        </Card>
                       )
                     : (
-                        <div className="space-y-3 sm:space-y-4">
-                          {dayDestinations.length === 0
-                            ? (
-                                <Card>
-                                  <CardContent className="p-4 sm:p-6 text-center">
-                                    <Text color="muted" className="text-sm sm:text-base">
-                                      No destinations for this day
-                                    </Text>
-                                  </CardContent>
-                                </Card>
-                              )
-                            : (
-                                dayDestinations.map(destination => (
-                                  <div
-                                    key={destination.id}
-                                    ref={(el) => {
-                                      if (el) {
-                                        destinationRefs.current[destination.id] = el;
-                                      }
-                                    }}
-                                  >
-                                    <DestinationCard
-                                      destination={destination}
-                                      isActive={activeDestinationId === destination.id}
-                                      onClick={() => handleDestinationClick(destination)}
-                                    />
-                                  </div>
-                                ))
-                              )}
-                        </div>
+                        dayDestinations.map((destination) => {
+                          const isSelected = selectedDestination?.id === destination.id;
+
+                          const refCallback = (el: HTMLDivElement | null) => {
+                            if (el) {
+                              destinationRefs.current[destination.id] = el;
+                              if (isSelected) {
+                                setTimeout(() => {
+                                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }, 50);
+                              }
+                            }
+                          };
+
+                          return (
+                            <div key={destination.id} ref={refCallback}>
+                              <AnimatePresence mode="wait">
+                                {selectedDestination?.id === destination.id
+                                  ? (
+                                // Detail Panel for the clicked destination
+                                      <motion.div
+                                        key={`detail-${destination.id}`}
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <DestinationDetailPanel
+                                          destination={selectedDestination}
+                                          onClose={handleBackToOverview}
+                                        />
+                                      </motion.div>
+                                    )
+                                  : (
+                                // Regular Destination Card
+                                      <motion.div
+                                        key={`card-${destination.id}`}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                      >
+                                        <DestinationCard
+                                          destination={destination}
+                                          isActive={activeDestinationId === destination.id}
+                                          onClick={() => handleDestinationClick(destination)}
+                                        />
+                                      </motion.div>
+                                    )}
+                              </AnimatePresence>
+
+                            </div>
+                          );
+                        })
                       )}
                 </div>
 
+                {/* Right Panel: Map */}
                 <div className="w-full lg:w-[70%] relative order-1 lg:order-2">
                   <div
                     className="sticky top-20 sm:top-24"
@@ -359,6 +396,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
             </section>
           );
         })}
+
       </div>
     </div>
   );

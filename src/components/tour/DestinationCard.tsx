@@ -1,8 +1,6 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Heading } from '@/components/ui/common/Heading';
-import { Text } from '@/components/ui/common/Text';
+import Image from 'next/image';
 
 type Destination = {
   id: string;
@@ -15,7 +13,6 @@ type Destination = {
   description: string | null;
   images?: string[];
 };
-
 type DestinationCardProps = {
   destination: Destination;
   isActive: boolean;
@@ -23,49 +20,61 @@ type DestinationCardProps = {
 };
 
 export function DestinationCard({ destination, isActive, onClick }: DestinationCardProps) {
+  // Keyboard and ARIA support for accessibility (fixes lints)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Prevent space from scrolling
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
-    <Card
-      className={`cursor-pointer transition-all overflow-hidden ${isActive ? 'ring-2 ring-foreground shadow-lg' : ''}`}
-      onClick={onClick}
+    <div
+      key={destination.id}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isActive}
+      onClick={() => onClick?.()}
+      onKeyDown={handleKeyDown}
+      className={`grid grid-cols-[80px_1fr] gap-3 items-start p-3 cursor-pointer transition-all rounded-lg border ${isActive ? 'ring-2 ring-foreground shadow-lg' : 'border-transparent'} hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary`}
     >
-      {destination.images && destination.images.length > 0 && (
-        <div className="w-full h-32 bg-muted overflow-hidden">
-          <img
-            src={destination.images[0] || '/placeholder.svg'}
-            alt={destination.name}
-            className="w-full h-full object-cover hover:scale-105 transition-transform"
-          />
-        </div>
-      )}
+      {/* Thumbnail */}
+      <div className="w-20 h-20 overflow-hidden rounded-lg bg-gray-200">
+        <Image
+          width={80}
+          height={80}
+          src={destination.images?.[0] || '/placeholder.svg'}
+          alt={destination.name}
+          className="w-full h-full object-cover transition-transform hover:scale-105"
+        />
+      </div>
 
-      <CardContent className="p-3 sm:p-4">
-        <Heading level={4} size="sm" weight="semibold" className="mb-2 text-sm sm:text-base line-clamp-1">
-          {destination.name}
-        </Heading>
-
+      {/* Content */}
+      <div className="flex flex-col justify-start">
+        {/* Time */}
+        {destination.name && (
+          <h3 className="text-sm font-semibold line-clamp-1">
+            {destination.name}
+          </h3>
+        )}
         {destination.timeSlot && (
-          <Text size="sm" color="muted" className="mb-2 text-xs sm:text-sm">
+          <h3 className="text-sm font-semibold line-clamp-1">
             {destination.timeSlot.start_time}
             {' '}
             -
             {destination.timeSlot.end_time}
-            {destination.timeSlot.slot_label && (
-              <>
-                {' '}
-                (
-                {destination.timeSlot.slot_label}
-                )
-              </>
-            )}
-          </Text>
+            {destination.timeSlot.slot_label && ` (${destination.timeSlot.slot_label})`}
+          </h3>
         )}
 
+        {/* Description */}
         {destination.description && (
-          <Text size="sm" color="muted" lineClamp={2} className="text-xs sm:text-sm">
+          <p className="text-xs  line-clamp-2 mt-1">
             {destination.description}
-          </Text>
+          </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
