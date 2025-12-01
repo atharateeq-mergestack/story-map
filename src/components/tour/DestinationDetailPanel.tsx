@@ -19,11 +19,17 @@ type Destination = {
 type DestinationDetailPanelProps = {
   destination: Destination;
   onClose: () => void;
+  isBlurred?: boolean;
+  isTop?: boolean;
 };
 
-export function DestinationDetailPanel({ destination, onClose }: DestinationDetailPanelProps) {
+export function DestinationDetailPanel({ destination, onClose, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
   return (
-    <div className="bg-background border border-foreground/20 rounded-lg overflow-hidden shadow-lg">
+    <div
+      className={`bg-background border border-foreground/20 rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+        isBlurred ? 'blur-sm opacity-60' : 'blur-0 opacity-100'
+      } ${isTop ? 'z-10' : 'z-0'}`}
+    >
       {/* Media / Carousel */}
       <div className="w-full h-64 sm:h-80 bg-gray-100">
         <ImageCarousel images={destination.images || []} title={destination.name} />

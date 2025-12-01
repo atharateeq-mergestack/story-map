@@ -59,18 +59,69 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const [activeDate, setActiveDate] = useState<string | null>(dates[0] || null);
   const [activeDestinationId, setActiveDestinationId] = useState<string | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [topDestinationId, setTopDestinationId] = useState<string | null>(null);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const daySectionRefs = useRef<Record<string, HTMLDivElement>>({});
   const destinationRefs = useRef<Record<string, HTMLDivElement>>({});
+  const detailPanelRefs = useRef<Record<string, HTMLDivElement>>({});
   const mapboxToken = Env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
   const allDestinations = dates.flatMap(date => destinationsByDate[date] || []);
   const totalDays = calculateTotalDays(tour.startDate, tour.endDate);
 
+  // Track which destination detail panel is at the top when in detail view
+  useEffect(() => {
+    if (!selectedDestination) {
+      return;
+    }
+
+    const dayDestinations = destinationsByDate[selectedDestination.date] || [];
+    if (dayDestinations.length === 0) {
+      return;
+    }
+
+    const handleScroll = () => {
+      let topPanelId: string | null = null;
+      let minTop = Infinity;
+
+      dayDestinations.forEach((dest) => {
+        const panel = detailPanelRefs.current[dest.id];
+        if (panel) {
+          const rect = panel.getBoundingClientRect();
+          // Check if this panel is visible and at the top
+          if (rect.top >= 0 && rect.top < minTop && rect.bottom > 0) {
+            minTop = rect.top;
+            topPanelId = dest.id;
+          }
+        }
+      });
+
+      // If no panel is at the top, use the first one
+      if (!topPanelId && dayDestinations.length > 0) {
+        topPanelId = dayDestinations[0]?.id || null;
+      }
+
+      if (topPanelId !== topDestinationId && topPanelId) {
+        setTopDestinationId(topPanelId);
+        setActiveDestinationId(topPanelId);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedDestination, destinationsByDate, topDestinationId]);
+
   useEffect(() => {
     const handleScroll = () => {
+      // Only handle date navigation if not in detail view
+      if (selectedDestination) {
+        return;
+      }
+
       let currentActiveIndex = 0;
       for (let i = 0; i < dates.length; i++) {
         const key = dates[i] as keyof typeof daySectionRefs.current;
@@ -84,26 +135,35 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       }
       const newActiveDate = dates[currentActiveIndex] || null;
 
-      if (newActiveDate !== activeDate && selectedDestination?.date !== newActiveDate) {
-        setSelectedDestination(() => null);
-        setActiveDestinationId(() => null);
-      }
-
       setActiveDate((prevDate) => {
         return prevDate !== newActiveDate ? newActiveDate : prevDate;
       });
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [dates, activeDate, selectedDestination?.date]);
+  }, [dates, selectedDestination]);
 
   const handleDestinationClick = (destination: Destination) => {
     setSelectedDestination(destination);
     setActiveDestinationId(destination.id);
+    setTopDestinationId(destination.id);
     setActiveDate(destination.date);
+
+    // Scroll to the first destination panel
+    setTimeout(() => {
+      const firstPanel = detailPanelRefs.current[destination.id];
+      if (firstPanel) {
+        const navHeight = navRef.current?.offsetHeight || 0;
+        const elementPosition = firstPanel.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({
+          top: elementPosition - navHeight - 20,
+          behavior: 'smooth',
+        });
+      }
+    }, 100);
   };
 
   const handleMarkerClick = (destinationId: string) => {
@@ -127,6 +187,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const handleBackToOverview = () => {
     setSelectedDestination(null);
     setActiveDestinationId(null);
+    setTopDestinationId(null);
   };
 
   const handleDateClick = (date: string) => {
@@ -141,6 +202,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       setActiveDate(date);
       setSelectedDestination(null);
       setActiveDestinationId(null);
+      setTopDestinationId(null);
     }
   };
 
@@ -319,27 +381,40 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                       )
                     : (
                         dayDestinations.map((destination) => {
-                          const isSelected = selectedDestination?.id === destination.id;
+                          const isDaySelected = selectedDestination?.date === date;
+                          const isTop = topDestinationId === destination.id;
+
+                          // Determine if this destination should be blurred
+                          // Blur all destinations below the top one when in detail view
+                          // Find the index of the top destination
+                          const topIndex = topDestinationId
+                            ? dayDestinations.findIndex(d => d.id === topDestinationId)
+                            : -1;
+                          const currentIndex = dayDestinations.findIndex(d => d.id === destination.id);
+                          const isBelowTop = topIndex >= 0 && currentIndex > topIndex;
+                          const shouldBlur = isDaySelected && isBelowTop && topDestinationId !== null;
 
                           const refCallback = (el: HTMLDivElement | null) => {
                             if (el) {
                               destinationRefs.current[destination.id] = el;
-                              if (isSelected) {
-                                setTimeout(() => {
-                                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }, 50);
-                              }
+                            }
+                          };
+
+                          const detailPanelRefCallback = (el: HTMLDivElement | null) => {
+                            if (el) {
+                              detailPanelRefs.current[destination.id] = el;
                             }
                           };
 
                           return (
                             <div key={destination.id} ref={refCallback}>
                               <AnimatePresence mode="wait">
-                                {selectedDestination?.id === destination.id
+                                {isDaySelected
                                   ? (
-                                // Detail Panel for the clicked destination
+                                // Show all destinations as detail panels when day is selected
                                       <motion.div
                                         key={`detail-${destination.id}`}
+                                        ref={detailPanelRefCallback}
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         exit={{ opacity: 0, height: 0 }}
@@ -347,8 +422,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                         className="overflow-hidden"
                                       >
                                         <DestinationDetailPanel
-                                          destination={selectedDestination}
+                                          destination={destination}
                                           onClose={handleBackToOverview}
+                                          isBlurred={shouldBlur && isBelowTop}
+                                          isTop={isTop}
                                         />
                                       </motion.div>
                                     )
