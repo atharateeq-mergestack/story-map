@@ -42,6 +42,7 @@ export function TourMap({
   // Refs to track previous values and prevent unnecessary updates
   const prevActiveDestinationIdRef = useRef<string | null>(null);
   const prevDestinationsLengthRef = useRef<number>(0);
+  const prevDestinationsWithCoordsRef = useRef<string>('');
   const destinationsRef = useRef<Destination[]>([]);
 
   type RouteData = {
@@ -116,25 +117,35 @@ export function TourMap({
       .filter(dest => dest.coordinate)
       .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
 
-    if (coordinates.length === 0) {
-      return;
-    }
+    // Always initialize the map, even if there are no coordinates
+    // Use a default center (e.g., world center) if no coordinates available
+    const defaultCenter: [number, number] = [0, 0]; // [lng, lat] - world center
+    const initialCenter = coordinates.length > 0 ? coordinates[0] : defaultCenter;
+    const initialZoom = coordinates.length > 0 ? 10 : 2;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: coordinates[0],
-      zoom: 10,
+      center: initialCenter,
+      zoom: initialZoom,
     }) as any;
 
     map.current?.on('load', () => {
       setIsMapLoaded(true);
+      // Only fit bounds if we have multiple coordinates
       if (coordinates.length > 1 && map.current) {
         const bounds = coordinates.reduce(
           (bounds, coord) => bounds.extend(coord),
           new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
         );
         map.current?.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, { padding: 50, maxZoom: 15 });
+      } else if (coordinates.length === 1 && map.current) {
+        // If only one coordinate, center on it with appropriate zoom
+        map.current.flyTo({
+          center: coordinates[0],
+          zoom: 12,
+          duration: 0,
+        });
       }
 
       // Add search if MapboxGeocoder exists
@@ -304,14 +315,23 @@ export function TourMap({
     const hasActiveDestinationIdChanged = activeDestinationId !== prevActiveDestinationIdRef.current;
     const hasDestinationsLengthChanged = destinationsLength !== prevDestinationsLengthRef.current;
 
-    // Only update if activeDestinationId changed or number of destinations changed
-    if (!hasActiveDestinationIdChanged && !hasDestinationsLengthChanged) {
+    // Create a hash of destinations with coordinates to detect coordinate changes
+    const destinationsWithCoords = currentDestinations
+      .filter(dest => dest.coordinate)
+      .map(dest => `${dest.id}:${dest.coordinate?.lat},${dest.coordinate?.lng}`)
+      .sort()
+      .join('|');
+    const hasDestinationsWithCoordsChanged = destinationsWithCoords !== prevDestinationsWithCoordsRef.current;
+
+    // Only update if activeDestinationId changed, number of destinations changed, or coordinates changed
+    if (!hasActiveDestinationIdChanged && !hasDestinationsLengthChanged && !hasDestinationsWithCoordsChanged) {
       return;
     }
 
     // Update refs
     prevActiveDestinationIdRef.current = activeDestinationId;
     prevDestinationsLengthRef.current = destinationsLength;
+    prevDestinationsWithCoordsRef.current = destinationsWithCoords;
 
     // Remove all existing markers
     markersRef.current.forEach(marker => marker.remove());
@@ -433,5 +453,19 @@ export function TourMap({
     };
   }, [activeDestinationId, destinations.length, isMapLoaded, onMarkerClick]);
 
-  return <div ref={mapContainer} className="h-full w-full" style={{ minHeight: '600px' }} />;
+  // Check if we have any destinations with coordinates
+  const hasCoordinates = destinations.some(dest => dest.coordinate !== null);
+
+  return (
+    <div className="h-full w-full relative" style={{ minHeight: '600px' }}>
+      <div ref={mapContainer} className="h-full w-full" />
+      {!hasCoordinates && destinations.length > 0 && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-background/95 backdrop-blur border rounded-lg px-4 py-2 shadow-lg">
+          <p className="text-sm text-muted-foreground">
+            No location data available for destinations
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
