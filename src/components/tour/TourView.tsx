@@ -1,6 +1,5 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -55,12 +54,38 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
   return end.diff(start, 'days') + 1;
 }
 
+/**
+ * TourView Component
+ *
+ * Displays a tour with its destinations organized by date. The component has two main view modes:
+ * 1. Overview Mode: Shows destination cards in a list format
+ * 2. Detail Mode: When a destination is selected, all destinations for that day expand into detail panels
+ *
+ * Key Features:
+ * - Scroll-based date navigation (updates active date as user scrolls)
+ * - Scroll-based destination tracking in detail view (tracks which panel is at the top)
+ * - Interactive map with markers that sync with selected destinations
+ * - Toggle between overview (cards) and detail (panels) views
+ */
 export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
+  // State Management:
+  // - activeDate: The currently visible/active date in the date navigation bar
+  // - activeDestinationId: The destination that should be highlighted on the map
+  // - selectedDestination: When set, switches the view to "detail mode" for that destination's day
+  //   This causes all destinations for that day to expand into detail panels instead of cards
+  // - topDestinationId: In detail view, tracks which destination panel is currently at the top
+  //   of the viewport (used for blurring panels below it)
   const [activeDate, setActiveDate] = useState<string | null>(dates[0] || null);
   const [activeDestinationId, setActiveDestinationId] = useState<string | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [topDestinationId, setTopDestinationId] = useState<string | null>(null);
 
+  // Refs for DOM elements:
+  // - heroRef: Hero section at the top
+  // - navRef: Sticky navigation bar with date buttons
+  // - daySectionRefs: Each day section (used for scroll-based date detection)
+  // - destinationRefs: Each destination card container
+  // - detailPanelRefs: Each destination detail panel (used for scroll-based panel tracking)
   const heroRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const daySectionRefs = useRef<Record<string, HTMLDivElement>>({});
@@ -71,12 +96,31 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const allDestinations = dates.flatMap(date => destinationsByDate[date] || []);
   const totalDays = calculateTotalDays(tour.startDate, tour.endDate);
 
-  // Track which destination detail panel is at the top when in detail view
+  /**
+   * Scroll Handler for Detail View Mode
+   *
+   * This effect only runs when selectedDestination is set (detail view is active).
+   * It tracks which destination detail panel is currently at the top of the viewport
+   * as the user scrolls through the expanded detail panels.
+   *
+   * How it works:
+   * 1. When a destination is selected, all destinations for that day expand into detail panels
+   * 2. As the user scrolls, this handler checks the position of each detail panel
+   * 3. It finds the panel with the smallest positive top value (closest to top of viewport)
+   * 4. Updates topDestinationId and activeDestinationId to sync the map highlight
+   * 5. Panels below the top one are blurred for visual focus
+   *
+   * The selectedDestination state controls the view mode:
+   * - null = Overview mode (shows destination cards)
+   * - Destination object = Detail mode (shows detail panels for that day)
+   */
   useEffect(() => {
+    // Only run this scroll handler when in detail view mode
     if (!selectedDestination) {
       return;
     }
 
+    // Get all destinations for the selected destination's day
     const dayDestinations = destinationsByDate[selectedDestination.date] || [];
     if (dayDestinations.length === 0) {
       return;
@@ -84,13 +128,17 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
     const handleScroll = () => {
       let topPanelId: string | null = null;
-      let minTop = Infinity;
+      let minTop = Infinity; // Track the smallest top value (closest to viewport top)
 
+      // Iterate through all destination panels for this day
       dayDestinations.forEach((dest) => {
         const panel = detailPanelRefs.current[dest.id];
         if (panel) {
           const rect = panel.getBoundingClientRect();
-          // Check if this panel is visible and at the top
+          // Check if this panel is visible and at the top of the viewport
+          // rect.top >= 0: Panel is at or below the top of viewport
+          // rect.top < minTop: This panel is closer to the top than previous ones
+          // rect.bottom > 0: Panel is at least partially visible (not scrolled past)
           if (rect.top >= 0 && rect.top < minTop && rect.bottom > 0) {
             minTop = rect.top;
             topPanelId = dest.id;
@@ -98,36 +146,60 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         }
       });
 
-      // If no panel is at the top, use the first one
+      // Fallback: If no panel is at the top (e.g., scrolled to top of page), use the first one
       if (!topPanelId && dayDestinations.length > 0) {
         topPanelId = dayDestinations[0]?.id || null;
       }
 
+      // Update state only if the top panel has changed (prevents unnecessary re-renders)
       if (topPanelId !== topDestinationId && topPanelId) {
         setTopDestinationId(topPanelId);
-        setActiveDestinationId(topPanelId);
+        setActiveDestinationId(topPanelId); // Sync map highlight
       }
     };
 
+    // Attach scroll listener with passive flag for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
+    // Call immediately to set initial state
     handleScroll();
 
+    // Cleanup: Remove scroll listener when component unmounts or dependencies change
     return () => window.removeEventListener('scroll', handleScroll);
   }, [selectedDestination, destinationsByDate, topDestinationId]);
 
+  /**
+   * Scroll Handler for Date Navigation (Overview Mode Only)
+   *
+   * This effect handles scroll-based date navigation in the sticky nav bar.
+   * It only runs when NOT in detail view (selectedDestination is null).
+   *
+   * How it works:
+   * 1. As user scrolls, checks which day section is closest to the top of viewport
+   * 2. Updates activeDate to highlight the corresponding date button in the nav bar
+   * 3. Uses a threshold of 100px from top to determine the active section
+   *
+   * This is disabled when selectedDestination is set because:
+   * - In detail view, we want the date to stay fixed to the selected destination's date
+   * - The detail view scroll handler takes precedence for tracking scroll position
+   */
   useEffect(() => {
     const handleScroll = () => {
-      // Only handle date navigation if not in detail view
+      // Only handle date navigation if NOT in detail view
+      // When selectedDestination is set, we're in detail mode and this handler should not run
       if (selectedDestination) {
         return;
       }
 
       let currentActiveIndex = 0;
+      // Find which day section is currently at the top of the viewport
       for (let i = 0; i < dates.length; i++) {
         const key = dates[i] as keyof typeof daySectionRefs.current;
         const section = daySectionRefs.current[key];
         if (section) {
           const rect = section.getBoundingClientRect();
+          // If section's top is within 100px of viewport top, it's the active section
+          // We keep updating currentActiveIndex as we find sections that meet this criteria
+          // The last one found (closest to top) will be the active one
           if (rect.top <= 100) {
             currentActiveIndex = i;
           }
@@ -135,24 +207,41 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       }
       const newActiveDate = dates[currentActiveIndex] || null;
 
+      // Only update state if the date has actually changed (prevents unnecessary re-renders)
       setActiveDate((prevDate) => {
         return prevDate !== newActiveDate ? newActiveDate : prevDate;
       });
     };
 
+    // Attach scroll listener with passive flag for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
+    // Call immediately to set initial state
     handleScroll();
 
+    // Cleanup: Remove scroll listener when component unmounts or dependencies change
     return () => window.removeEventListener('scroll', handleScroll);
   }, [dates, selectedDestination]);
 
+  /**
+   * Handles clicking on a destination card
+   *
+   * When a destination is clicked:
+   * 1. Sets selectedDestination - This switches the view to "detail mode"
+   *    - All destinations for that day will expand into detail panels
+   *    - The scroll handler for detail view will start tracking which panel is at the top
+   * 2. Sets activeDestinationId - Highlights this destination on the map
+   * 3. Sets topDestinationId - Marks this as the initial top panel
+   * 4. Sets activeDate - Updates the date nav to show this destination's date
+   * 5. Scrolls to the destination's detail panel
+   */
   const handleDestinationClick = (destination: Destination) => {
     setSelectedDestination(destination);
     setActiveDestinationId(destination.id);
     setTopDestinationId(destination.id);
     setActiveDate(destination.date);
 
-    // Scroll to the first destination panel
+    // Scroll to the first destination panel after a brief delay
+    // This ensures the DOM has updated with the new detail panels
     setTimeout(() => {
       const firstPanel = detailPanelRefs.current[destination.id];
       if (firstPanel) {
@@ -166,6 +255,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     }, 100);
   };
 
+  /**
+   * Handles clicking on a map marker
+   *
+   * Similar to handleDestinationClick, but triggered from the map.
+   * Scrolls to the day section containing the destination.
+   */
   const handleMarkerClick = (destinationId: string) => {
     const destination = allDestinations.find(d => d.id === destinationId);
     if (destination) {
@@ -184,12 +279,29 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     }
   };
 
+  /**
+   * Exits detail view and returns to overview mode
+   *
+   * Setting selectedDestination to null switches back to overview mode:
+   * - All detail panels collapse back into destination cards
+   * - The date navigation scroll handler becomes active again
+   * - The detail view scroll handler stops running
+   */
   const handleBackToOverview = () => {
     setSelectedDestination(null);
     setActiveDestinationId(null);
     setTopDestinationId(null);
   };
 
+  /**
+   * Handles clicking on a date button in the navigation bar
+   *
+   * When a date is clicked:
+   * 1. Scrolls to that day's section
+   * 2. Sets activeDate to highlight the button
+   * 3. Clears selectedDestination to ensure we're in overview mode
+   *    (This ensures clicking a date always shows the card view, not detail panels)
+   */
   const handleDateClick = (date: string) => {
     const section = daySectionRefs.current[date];
     if (section) {
@@ -200,6 +312,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         behavior: 'smooth',
       });
       setActiveDate(date);
+      // Clear detail view state to return to overview mode
       setSelectedDestination(null);
       setActiveDestinationId(null);
       setTopDestinationId(null);
@@ -381,12 +494,24 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                       )
                     : (
                         dayDestinations.map((destination) => {
+                          // View Mode Logic:
+                          // - isDaySelected: true if this day matches the selectedDestination's date
+                          //   When true, this day is in "detail mode" - all destinations show as detail panels
+                          //   When false, this day is in "overview mode" - destinations show as cards
                           const isDaySelected = selectedDestination?.date === date;
+
+                          // isTop: true if this destination's panel is currently at the top of viewport
+                          // Used to highlight the active panel and sync with map
                           const isTop = topDestinationId === destination.id;
 
-                          // Determine if this destination should be blurred
-                          // Blur all destinations below the top one when in detail view
-                          // Find the index of the top destination
+                          // Blur Effect Logic:
+                          // When in detail view (isDaySelected = true), we blur all panels below the top one
+                          // This creates a visual focus effect where only the top panel is fully visible
+                          //
+                          // How it works:
+                          // 1. Find the index of the top destination panel
+                          // 2. Find the index of the current destination
+                          // 3. If current is below top (higher index), it should be blurred
                           const topIndex = topDestinationId
                             ? dayDestinations.findIndex(d => d.id === topDestinationId)
                             : -1;
@@ -408,44 +533,47 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
                           return (
                             <div key={destination.id} ref={refCallback}>
-                              <AnimatePresence mode="wait">
-                                {isDaySelected
-                                  ? (
-                                // Show all destinations as detail panels when day is selected
-                                      <motion.div
-                                        key={`detail-${destination.id}`}
-                                        ref={detailPanelRefCallback}
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="overflow-hidden"
-                                      >
-                                        <DestinationDetailPanel
-                                          destination={destination}
-                                          onClose={handleBackToOverview}
-                                          isBlurred={shouldBlur && isBelowTop}
-                                          isTop={isTop}
-                                        />
-                                      </motion.div>
-                                    )
-                                  : (
-                                // Regular Destination Card
-                                      <motion.div
-                                        key={`card-${destination.id}`}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                      >
-                                        <DestinationCard
-                                          destination={destination}
-                                          isActive={activeDestinationId === destination.id}
-                                          onClick={() => handleDestinationClick(destination)}
-                                        />
-                                      </motion.div>
-                                    )}
-                              </AnimatePresence>
+                              {/*
+                                View Mode Toggle:
+                                The selectedDestination state controls which view is shown:
 
+                                DETAIL MODE (isDaySelected = true):
+                                - Triggered when selectedDestination is set and matches this day
+                                - All destinations for this day expand into detail panels
+                                - User can scroll through panels, with the top one highlighted
+                                - Panels below the top one are blurred for visual focus
+                                - The detail view scroll handler tracks which panel is at the top
+
+                                OVERVIEW MODE (isDaySelected = false):
+                                - Default state when selectedDestination is null or doesn't match this day
+                                - Destinations display as compact cards
+                                - Clicking a card triggers handleDestinationClick to enter detail mode
+                              */}
+                              {isDaySelected
+                                ? (
+                                    // DETAIL MODE: Show destination as expanded detail panel
+                                    <div
+                                      ref={detailPanelRefCallback}
+                                      className="overflow-hidden"
+                                    >
+                                      <DestinationDetailPanel
+                                        destination={destination}
+                                        onClose={handleBackToOverview}
+                                        isBlurred={shouldBlur && isBelowTop}
+                                        isTop={isTop}
+                                      />
+                                    </div>
+                                  )
+                                : (
+                                    // OVERVIEW MODE: Show destination as compact card
+                                    <div>
+                                      <DestinationCard
+                                        destination={destination}
+                                        isActive={activeDestinationId === destination.id}
+                                        onClick={() => handleDestinationClick(destination)}
+                                      />
+                                    </div>
+                                  )}
                             </div>
                           );
                         })
