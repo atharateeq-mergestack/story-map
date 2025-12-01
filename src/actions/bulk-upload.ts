@@ -62,6 +62,43 @@ type BulkUploadResult = {
 };
 
 /**
+ * Validate and parse a date string
+ * Returns a valid date string in YYYY-MM-DD format or null if invalid
+ */
+function validateDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr || !dateStr.trim()) {
+    return null;
+  }
+
+  const trimmed = dateStr.trim();
+
+  // Try to parse with moment.js
+  const parsed = moment(trimmed, ['YYYY-MM-DD', 'YYYY/MM/DD', 'DD-MM-YYYY', 'DD/MM/YYYY', 'MM-DD-YYYY', 'MM/DD/YYYY'], true);
+
+  if (!parsed.isValid()) {
+    return null;
+  }
+
+  // Check if the date is actually valid (e.g., not 2025-08-62)
+  const month = parsed.month() + 1; // moment months are 0-indexed
+  const day = parsed.date();
+
+  // Validate the date components are within valid ranges
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  // Check if the day is valid for the given month
+  const daysInMonth = parsed.daysInMonth();
+  if (day > daysInMonth) {
+    return null;
+  }
+
+  // Return in YYYY-MM-DD format
+  return parsed.format('YYYY-MM-DD');
+}
+
+/**
  * Server action to handle bulk CSV or GeoJSON upload for tours and destinations
  */
 export async function bulkUploadTours(formData: FormData): Promise<BulkUploadResult> {
@@ -133,8 +170,8 @@ export async function bulkUploadTours(formData: FormData): Promise<BulkUploadRes
     }
     const tourName = firstRow.tour_name?.trim();
     const tourDescription = firstRow.tour_description?.trim() || null;
-    const startDate = firstRow.start_date?.trim() || null;
-    const endDate = firstRow.end_date?.trim() || null;
+    const startDate = validateDate(firstRow.start_date);
+    const endDate = validateDate(firstRow.end_date);
     const startLocation = firstRow.start_location?.trim() || null;
     const endLocation = firstRow.end_location?.trim() || null;
 
@@ -182,7 +219,7 @@ export async function bulkUploadTours(formData: FormData): Promise<BulkUploadRes
     // Process destinations from all rows
     const destinationValuesPromises = rows.map(async (row) => {
       const destinationName = row.destination_name?.trim();
-      const destinationDate = row.destination_date?.trim();
+      const destinationDate = validateDate(row.destination_date);
       const startTime = row.start_time?.trim();
       const endTime = row.end_time?.trim();
       const slotLabel = row.slot_label?.trim();
@@ -191,7 +228,7 @@ export async function bulkUploadTours(formData: FormData): Promise<BulkUploadRes
       const lngStr = row.lng?.trim();
       const description = row.destination_description?.trim() || null;
 
-      // Skip rows without required fields
+      // Skip rows without required fields or invalid dates
       if (!destinationName || !destinationDate) {
         return null;
       }
@@ -313,6 +350,8 @@ async function handleGeoJSONUpload(file: File): Promise<BulkUploadResult> {
     const dates = geoJSON.features
       .map(f => f.properties.Day)
       .filter((day): day is string => Boolean(day))
+      .map(day => validateDate(day))
+      .filter((date): date is string => date !== null)
       .sort();
 
     const startDate = dates.length > 0 ? dates[0] : null;
@@ -366,7 +405,7 @@ async function handleGeoJSONUpload(file: File): Promise<BulkUploadResult> {
     const destinationValuesPromises = geoJSON.features.map(async (feature) => {
       const props = feature.properties;
       const name = props.Name?.trim();
-      const day = props.Day?.trim();
+      const day = validateDate(props.Day);
       const comment = props.Comment?.trim() || null;
       const location = props.Location?.trim() || null;
       const type = props.Type?.trim() || null;
@@ -375,7 +414,7 @@ async function handleGeoJSONUpload(file: File): Promise<BulkUploadResult> {
       const imageUrl = props.Image_URL?.trim() || null;
       const iconUrl = props.icon_url?.trim() || null;
 
-      // Skip features without required fields
+      // Skip features without required fields or invalid dates
       if (!name || !day) {
         return null;
       }

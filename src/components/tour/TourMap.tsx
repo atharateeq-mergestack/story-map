@@ -39,6 +39,11 @@ export function TourMap({
   const routeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
+  // Refs to track previous values and prevent unnecessary updates
+  const prevActiveDestinationIdRef = useRef<string | null>(null);
+  const prevDestinationsLengthRef = useRef<number>(0);
+  const destinationsRef = useRef<Destination[]>([]);
+
   type RouteData = {
     distance: number; // in meters
     duration: number; // in seconds
@@ -283,11 +288,32 @@ export function TourMap({
     };
   }, [mapboxAccessToken, destinations, activeDestinationId, fetchRoute]);
 
+  // Update destinations ref whenever destinations change
+  useEffect(() => {
+    destinationsRef.current = destinations;
+  }, [destinations]);
+
+  // Only update markers and zoom when activeDestinationId changes or number of destinations changes
   useEffect(() => {
     if (!map.current || !isMapLoaded) {
       return;
     }
 
+    const currentDestinations = destinationsRef.current;
+    const destinationsLength = currentDestinations.length;
+    const hasActiveDestinationIdChanged = activeDestinationId !== prevActiveDestinationIdRef.current;
+    const hasDestinationsLengthChanged = destinationsLength !== prevDestinationsLengthRef.current;
+
+    // Only update if activeDestinationId changed or number of destinations changed
+    if (!hasActiveDestinationIdChanged && !hasDestinationsLengthChanged) {
+      return;
+    }
+
+    // Update refs
+    prevActiveDestinationIdRef.current = activeDestinationId;
+    prevDestinationsLengthRef.current = destinationsLength;
+
+    // Remove all existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
@@ -297,7 +323,50 @@ export function TourMap({
     });
     clickHandlersRef.current = [];
 
-    destinations.forEach((destination) => {
+    // Filter destinations: if activeDestinationId is set, only show that destination
+    const destinationsToShow = activeDestinationId
+      ? currentDestinations.filter(dest => dest.id === activeDestinationId)
+      : currentDestinations;
+
+    // If a destination is selected, zoom in on it
+    if (activeDestinationId && destinationsToShow.length > 0) {
+      const activeDest = destinationsToShow[0];
+      if (activeDest?.coordinate && map.current) {
+        map.current.flyTo({
+          center: [activeDest.coordinate.lng, activeDest.coordinate.lat],
+          zoom: 15,
+          duration: 1000,
+          essential: true,
+        });
+      }
+    } else if (!activeDestinationId && destinationsLength > 0) {
+      // If no destination is selected, zoom out to show all destinations
+      const coordinates = currentDestinations
+        .filter(dest => dest.coordinate)
+        .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
+
+      if (coordinates.length > 0 && map.current) {
+        if (coordinates.length === 1) {
+          map.current.flyTo({
+            center: coordinates[0],
+            zoom: 12,
+            duration: 1000,
+            essential: true,
+          });
+        } else {
+          const bounds = coordinates.reduce(
+            (bounds, coord) => bounds.extend(coord),
+            new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
+          );
+          map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
+            padding: 50,
+            maxZoom: 15,
+          });
+        }
+      }
+    }
+
+    destinationsToShow.forEach((destination) => {
       if (!destination.coordinate) {
         return;
       }
@@ -348,13 +417,8 @@ export function TourMap({
 
       markersRef.current.push(marker as any);
 
-      if (activeDestinationId === destination.id && map.current) {
-        map.current.flyTo({
-          center: [destination.coordinate.lng, destination.coordinate.lat],
-          zoom: 14,
-          duration: 1000,
-          essential: true,
-        });
+      // Open popup automatically for active destination
+      if (activeDestinationId === destination.id) {
         marker.togglePopup();
       }
     });
@@ -367,7 +431,7 @@ export function TourMap({
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
     };
-  }, [destinations, activeDestinationId, isMapLoaded, onMarkerClick]);
+  }, [activeDestinationId, destinations.length, isMapLoaded, onMarkerClick]);
 
   return <div ref={mapContainer} className="h-full w-full" style={{ minHeight: '600px' }} />;
 }

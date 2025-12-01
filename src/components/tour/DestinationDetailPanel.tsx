@@ -51,6 +51,10 @@ export function DestinationDetailPanel({ destination, onClose, isBlurred = false
         )}
 
         {/* Description */}
+        {destination.name && (
+          <p className="text-md font-semibold text-foreground/80 leading-relaxed">{destination.name}</p>
+        )}
+        {/* Description */}
         {destination.description && (
           <p className="text-sm text-foreground/80 leading-relaxed">{destination.description}</p>
         )}

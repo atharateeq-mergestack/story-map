@@ -80,6 +80,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [topDestinationId, setTopDestinationId] = useState<string | null>(null);
 
+  // Use refs to track previous values and prevent unnecessary re-renders
+  const prevTopDestinationIdRef = useRef<string | null>(null);
+  const scrollHandlerRef = useRef<(() => void) | null>(null);
+
   // Refs for DOM elements:
   // - heroRef: Hero section at the top
   // - navRef: Sticky navigation bar with date buttons
@@ -103,6 +107,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * It tracks which destination detail panel is currently at the top of the viewport
    * as the user scrolls through the expanded detail panels.
    *
+   * IMPORTANT: This handler only works when the user is still on the same date as the
+   * selectedDestination. If the user scrolls to a different date, the date navigation
+   * handler will clear the selectedDestination, and this handler will stop running.
+   *
    * How it works:
    * 1. When a destination is selected, all destinations for that day expand into detail panels
    * 2. As the user scrolls, this handler checks the position of each detail panel
@@ -117,6 +125,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   useEffect(() => {
     // Only run this scroll handler when in detail view mode
     if (!selectedDestination) {
+      // Clean up previous scroll handler if switching out of detail view
+      if (scrollHandlerRef.current) {
+        window.removeEventListener('scroll', scrollHandlerRef.current);
+        scrollHandlerRef.current = null;
+      }
+      prevTopDestinationIdRef.current = null;
       return;
     }
 
@@ -126,7 +140,24 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       return;
     }
 
+    // Reset previous tracking when selectedDestination changes
+    prevTopDestinationIdRef.current = null;
+
     const handleScroll = () => {
+      // Check if we're still on the same date section
+      // If not, the date navigation handler will clear selectedDestination
+      const selectedDateSection = daySectionRefs.current[selectedDestination.date];
+      if (!selectedDateSection) {
+        return;
+      }
+
+      const sectionRect = selectedDateSection.getBoundingClientRect();
+      // If the selected date section is not visible or far from viewport, don't update
+      // This prevents updates when user has scrolled to a different date
+      if (sectionRect.bottom < 0 || sectionRect.top > window.innerHeight) {
+        return;
+      }
+
       let topPanelId: string | null = null;
       let minTop = Infinity; // Track the smallest top value (closest to viewport top)
 
@@ -151,12 +182,17 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         topPanelId = dayDestinations[0]?.id || null;
       }
 
-      // Update state only if the top panel has changed (prevents unnecessary re-renders)
-      if (topPanelId !== topDestinationId && topPanelId) {
+      // Update state only if the top panel has actually changed (prevents unnecessary re-renders)
+      // Use ref to track previous value instead of state dependency
+      if (topPanelId !== prevTopDestinationIdRef.current && topPanelId) {
+        prevTopDestinationIdRef.current = topPanelId;
         setTopDestinationId(topPanelId);
         setActiveDestinationId(topPanelId); // Sync map highlight
       }
     };
+
+    // Store handler reference for cleanup
+    scrollHandlerRef.current = handleScroll;
 
     // Attach scroll listener with passive flag for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -164,32 +200,32 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     handleScroll();
 
     // Cleanup: Remove scroll listener when component unmounts or dependencies change
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [selectedDestination, destinationsByDate, topDestinationId]);
+    return () => {
+      if (scrollHandlerRef.current) {
+        window.removeEventListener('scroll', scrollHandlerRef.current);
+        scrollHandlerRef.current = null;
+      }
+    };
+  }, [selectedDestination, destinationsByDate]);
 
   /**
-   * Scroll Handler for Date Navigation (Overview Mode Only)
+   * Scroll Handler for Date Navigation
    *
    * This effect handles scroll-based date navigation in the sticky nav bar.
-   * It only runs when NOT in detail view (selectedDestination is null).
+   * It ALWAYS runs, regardless of whether a destination is selected.
    *
    * How it works:
    * 1. As user scrolls, checks which day section is closest to the top of viewport
    * 2. Updates activeDate to highlight the corresponding date button in the nav bar
    * 3. Uses a threshold of 100px from top to determine the active section
+   * 4. If a destination is selected and user scrolls to a different date,
+   *    it clears the selectedDestination to exit detail view
    *
-   * This is disabled when selectedDestination is set because:
-   * - In detail view, we want the date to stay fixed to the selected destination's date
-   * - The detail view scroll handler takes precedence for tracking scroll position
+   * This allows users to scroll between dates even when in detail view.
+   * When they scroll to a different date, the detail view is automatically cleared.
    */
   useEffect(() => {
     const handleScroll = () => {
-      // Only handle date navigation if NOT in detail view
-      // When selectedDestination is set, we're in detail mode and this handler should not run
-      if (selectedDestination) {
-        return;
-      }
-
       let currentActiveIndex = 0;
       // Find which day section is currently at the top of the viewport
       for (let i = 0; i < dates.length; i++) {
@@ -206,6 +242,15 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         }
       }
       const newActiveDate = dates[currentActiveIndex] || null;
+
+      // If a destination is selected and user has scrolled to a different date,
+      // clear the selected destination to exit detail view
+      if (selectedDestination && newActiveDate && selectedDestination.date !== newActiveDate) {
+        setSelectedDestination(null);
+        setActiveDestinationId(null);
+        setTopDestinationId(null);
+        prevTopDestinationIdRef.current = null;
+      }
 
       // Only update state if the date has actually changed (prevents unnecessary re-renders)
       setActiveDate((prevDate) => {
@@ -233,9 +278,14 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * 3. Sets topDestinationId - Marks this as the initial top panel
    * 4. Sets activeDate - Updates the date nav to show this destination's date
    * 5. Scrolls to the destination's detail panel
+   *
+   * Note: Only updates selectedDestination if it's actually different to prevent unnecessary re-renders
    */
   const handleDestinationClick = (destination: Destination) => {
-    setSelectedDestination(destination);
+    // Only update if destination is actually different
+    if (selectedDestination?.id !== destination.id) {
+      setSelectedDestination(destination);
+    }
     setActiveDestinationId(destination.id);
     setTopDestinationId(destination.id);
     setActiveDate(destination.date);
@@ -260,11 +310,16 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    *
    * Similar to handleDestinationClick, but triggered from the map.
    * Scrolls to the day section containing the destination.
+   *
+   * Note: Only updates selectedDestination if it's actually different to prevent unnecessary re-renders
    */
   const handleMarkerClick = (destinationId: string) => {
     const destination = allDestinations.find(d => d.id === destinationId);
     if (destination) {
-      setSelectedDestination(destination);
+      // Only update if destination is actually different
+      if (selectedDestination?.id !== destination.id) {
+        setSelectedDestination(destination);
+      }
       setActiveDestinationId(destinationId);
       setActiveDate(destination.date);
       const section = daySectionRefs.current[destination.date];
