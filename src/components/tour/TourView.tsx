@@ -315,23 +315,29 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    */
   const handleMarkerClick = (destinationId: string) => {
     const destination = allDestinations.find(d => d.id === destinationId);
-    if (destination) {
-      // Only update if destination is actually different
-      if (selectedDestination?.id !== destination.id) {
-        setSelectedDestination(destination);
-      }
-      setActiveDestinationId(destinationId);
-      setActiveDate(destination.date);
-      const section = daySectionRefs.current[destination.date];
-      if (section) {
+    if (!destination) {
+      return;
+    }
+    // Only update if destination is actually different
+    if (selectedDestination?.id !== destination.id) {
+      setSelectedDestination(destination);
+    }
+    setActiveDestinationId(destination.id);
+    setTopDestinationId(destination.id);
+
+    // Scroll to the first destination panel after a brief delay
+    // This ensures the DOM has updated with the new detail panels
+    setTimeout(() => {
+      const firstPanel = detailPanelRefs.current[destination.id];
+      if (firstPanel) {
         const navHeight = navRef.current?.offsetHeight || 0;
-        const elementPosition = section.getBoundingClientRect().top + window.scrollY;
+        const elementPosition = firstPanel.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({
           top: elementPosition - navHeight - 20,
           behavior: 'smooth',
         });
       }
-    }
+    }, 100);
   };
 
   /**
