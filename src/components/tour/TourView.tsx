@@ -566,19 +566,19 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                           const isTop = topDestinationId === destination.id;
 
                           // Blur Effect Logic:
-                          // When in detail view (isDaySelected = true), we blur all panels below the top one
+                          // When in detail view (isDaySelected = true), we blur all panels except the top one
                           // This creates a visual focus effect where only the top panel is fully visible
                           //
                           // How it works:
                           // 1. Find the index of the top destination panel
                           // 2. Find the index of the current destination
-                          // 3. If current is below top (higher index), it should be blurred
+                          // 3. If current is not the top one (different index), it should be blurred
                           const topIndex = topDestinationId
                             ? dayDestinations.findIndex(d => d.id === topDestinationId)
                             : -1;
                           const currentIndex = dayDestinations.findIndex(d => d.id === destination.id);
-                          const isBelowTop = topIndex >= 0 && currentIndex > topIndex;
-                          const shouldBlur = isDaySelected && isBelowTop && topDestinationId !== null;
+                          const isNotTop = topIndex >= 0 && currentIndex !== topIndex;
+                          const shouldBlur = isDaySelected && isNotTop && topDestinationId !== null;
 
                           const refCallback = (el: HTMLDivElement | null) => {
                             if (el) {
@@ -602,7 +602,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                 - Triggered when selectedDestination is set and matches this day
                                 - All destinations for this day expand into detail panels
                                 - User can scroll through panels, with the top one highlighted
-                                - Panels below the top one are blurred for visual focus
+                                - Panels above and below the top one are blurred for visual focus
                                 - The detail view scroll handler tracks which panel is at the top
 
                                 OVERVIEW MODE (isDaySelected = false):
@@ -620,7 +620,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                       <DestinationDetailPanel
                                         destination={destination}
                                         onClose={handleBackToOverview}
-                                        isBlurred={shouldBlur && isBelowTop}
+                                        isBlurred={shouldBlur}
                                         isTop={isTop}
                                       />
                                     </div>

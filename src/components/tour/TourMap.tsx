@@ -84,6 +84,33 @@ export function TourMap({
     }
   }, [mapboxAccessToken]);
 
+  // Get user's current location using Geolocation API
+  const getCurrentLocation = useCallback((): Promise<[number, number] | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.warn('Geolocation is not supported by this browser.');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Return [lng, lat] format for Mapbox
+          resolve([position.coords.longitude, position.coords.latitude]);
+        },
+        (error) => {
+          console.warn('Error getting current location:', error);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    });
+  }, []);
+
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -115,7 +142,7 @@ export function TourMap({
     // Use a default center (e.g., world center) if no coordinates available
     const defaultCenter: [number, number] = [0, 0]; // [lng, lat] - world center
     const initialCenter = coordinates.length > 0 ? coordinates[0] : defaultCenter;
-    const initialZoom = coordinates.length > 0 ? 10 : 2;
+    const initialZoom = coordinates.length > 0 ? 11 : 2;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -149,6 +176,222 @@ export function TourMap({
       );
       directionsControlRef.current = directionsControl;
       map.current?.addControl(directionsControl, 'top-right');
+
+      // Helper function to calculate and display route between two points
+      const calculateAndDisplayRoute = async (
+        from: [number, number],
+        to: [number, number],
+      ) => {
+        if (!map.current) {
+          return;
+        }
+
+        // Remove previous route layers (all routes)
+        for (let i = 0; i < 3; i++) {
+          if (map.current.getLayer(`route-${i}`)) {
+            map.current.removeLayer(`route-${i}`);
+          }
+          if (map.current.getSource(`route-${i}`)) {
+            map.current.removeSource(`route-${i}`);
+          }
+        }
+        // Also remove old single route if it exists
+        if (map.current.getSource('route')) {
+          map.current.removeLayer('route');
+          map.current.removeSource('route');
+        }
+        if (routeMarkerRef.current) {
+          routeMarkerRef.current.remove();
+          routeMarkerRef.current = null;
+        }
+
+        // Fetch routes from Mapbox Directions API (returns array of routes)
+        const fetchedRoutes = await fetchRoute(from, to);
+
+        if (fetchedRoutes.length > 0) {
+          // Build turn-by-turn directions for all routes
+          const allDirections: string[][] = [];
+          fetchedRoutes.forEach((route) => {
+            const directions: string[] = [];
+            route.legs.forEach((leg) => {
+              leg.steps.forEach((step, index) => {
+                const instruction = step.maneuver.instruction;
+                const modifier = step.maneuver.modifier
+                  ? ` ${step.maneuver.modifier}`
+                  : '';
+                const distance = formatDistance(step.distance);
+                directions.push(
+                  `${index + 1}. ${instruction}${modifier} (${distance})`,
+                );
+              });
+            });
+            allDirections.push(directions);
+          });
+
+          // Store route data in state (first route)
+          if (fetchedRoutes[0]) {
+            setRouteData(fetchedRoutes[0]);
+          }
+          if (allDirections[0]) {
+            setRouteDirections(allDirections[0]);
+          }
+          setRouteOrigin(from);
+          setRouteDestination(to);
+
+          // Function to add all routes to map with proper styling
+          const addAllRoutesToMap = (routes: RouteData[], selectedIndex: number) => {
+            if (!map.current) {
+              return;
+            }
+            // Remove existing route layers
+            for (let i = 0; i < 3; i++) {
+              if (map.current.getLayer(`route-${i}`)) {
+                map.current.removeLayer(`route-${i}`);
+              }
+              if (map.current.getSource(`route-${i}`)) {
+                map.current.removeSource(`route-${i}`);
+              }
+            }
+            // Add all routes as separate layers
+            routes.forEach((route, index) => {
+              const isSelected = index === selectedIndex;
+              map.current!.addSource(`route-${index}`, {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {
+                    routeIndex: index,
+                    isSelected,
+                  },
+                  geometry: route.geometry,
+                },
+              });
+              map.current!.addLayer({
+                id: `route-${index}`,
+                type: 'line',
+                source: `route-${index}`,
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                  'line-color': isSelected ? '#0074D9' : '#7FC8F8', // Light blue for non-selected routes
+                  'line-width': isSelected ? 4 : 3,
+                  'line-opacity': isSelected ? 1 : 0.7, // Less grayed out
+                },
+              });
+            });
+            // Fit map to show all routes
+            const allBounds = routes.reduce((bounds, route) => {
+              route.geometry.coordinates.forEach((coord) => {
+                bounds.extend(coord as [number, number]);
+              });
+              return bounds;
+            }, new mapboxgl.LngLatBounds(from, from));
+            map.current.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
+              padding: 50,
+              maxZoom: 15,
+              duration: 500,
+            });
+          };
+
+          // Function to update selected route styling
+          const updateMapRoute = (routeIndex: number, _routeData: RouteData) => {
+            if (!map.current) {
+              return;
+            }
+            // Update all route layer styles
+            fetchedRoutes.forEach((_route, index) => {
+              const isSelected = index === routeIndex;
+              if (map.current!.getLayer(`route-${index}`)) {
+                map.current!.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#7FC8F8'); // Light blue for non-selected
+                map.current!.setPaintProperty(`route-${index}`, 'line-width', isSelected ? 4 : 3);
+                map.current!.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7); // Less grayed out
+              }
+            });
+            // Fit map to show selected route
+            const selectedRoute = fetchedRoutes[routeIndex];
+            if (selectedRoute) {
+              const bounds = selectedRoute.geometry.coordinates.reduce(
+                (bounds, coord) => bounds.extend(coord as [number, number]),
+                new mapboxgl.LngLatBounds(from, from),
+              );
+              map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
+                padding: 50,
+                maxZoom: 15,
+                duration: 500,
+              });
+            }
+          };
+
+          // Set up route change callback
+          if (directionsControlRef.current) {
+            directionsControlRef.current.setRouteChangeCallback(updateMapRoute);
+          }
+
+          // Add all routes to map (first one selected by default)
+          addAllRoutesToMap(fetchedRoutes, 0);
+
+          // Add click handlers to route layers for switching
+          fetchedRoutes.forEach((_route, index) => {
+            // Click handler to switch routes
+            const clickHandler = () => {
+              if (directionsControlRef.current) {
+                // Reopen directions if closed
+                if (!directionsControlRef.current.isDirectionsVisible()) {
+                  directionsControlRef.current.reopenDirections();
+                }
+                // Switch to clicked route
+                directionsControlRef.current.switchRoute(index);
+              }
+            };
+            map.current!.on('click', `route-${index}`, clickHandler);
+
+            // Change cursor on hover for all routes (to indicate they're clickable)
+            const mouseEnterHandler = () => {
+              map.current!.getCanvas().style.cursor = 'pointer';
+            };
+            const mouseLeaveHandler = () => {
+              map.current!.getCanvas().style.cursor = '';
+            };
+            map.current!.on('mouseenter', `route-${index}`, mouseEnterHandler);
+            map.current!.on('mouseleave', `route-${index}`, mouseLeaveHandler);
+          });
+
+          // Show directions in Mapbox control with all routes
+          if (directionsControlRef.current) {
+            // Generate URLs for buttons
+            const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${from[1]},${from[0]}&destination=${to[1]},${to[0]}`;
+            const appleUrl = `https://maps.apple.com/?saddr=${from[1]},${from[0]}&daddr=${to[1]},${to[0]}`;
+            directionsControlRef.current.showDirections(fetchedRoutes, allDirections, googleUrl, appleUrl);
+          }
+        } else {
+          // Fallback: show straight line if route fetch fails
+          map.current.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [from, to],
+              },
+            },
+          });
+          map.current.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#0074D9', 'line-width': 4 },
+          });
+          // Clear route data if fetch fails
+          setRouteData(null);
+          setRouteDirections([]);
+          setRouteOrigin(null);
+          setRouteDestination(null);
+          if (directionsControlRef.current) {
+            directionsControlRef.current.hideDirections();
+          }
+        }
+      };
 
       // Add search if MapboxGeocoder exists
       if (MapboxGeocoder) {
@@ -207,209 +450,25 @@ export function TourMap({
           searchMarkerRef.current = searchMarker as any;
           map.current.flyTo({ center, zoom: 14 });
 
-          // Optional: Show route to active destination if exists
+          // Calculate and display route:
+          // 1. If there's an active destination, show route from searched location to destination
+          // 2. If no active destination, get current location and show route from current location to searched location
           const dest = destinations.find(d => d.id === activeDestinationId);
           if (dest?.coordinate) {
-            const from: [number, number] = [center[0], center[1]]; // [lng, lat]
-            const to: [number, number] = [dest.coordinate.lng, dest.coordinate.lat]; // [lng, lat]
-
-            // Remove previous route layers (all routes)
-            for (let i = 0; i < 3; i++) {
-              if (map.current.getLayer(`route-${i}`)) {
-                map.current.removeLayer(`route-${i}`);
-              }
-              if (map.current.getSource(`route-${i}`)) {
-                map.current.removeSource(`route-${i}`);
-              }
-            }
-            // Also remove old single route if it exists
-            if (map.current.getSource('route')) {
-              map.current.removeLayer('route');
-              map.current.removeSource('route');
-            }
-            if (routeMarkerRef.current) {
-              routeMarkerRef.current.remove();
-              routeMarkerRef.current = null;
-            }
-
-            // Fetch routes from Mapbox Directions API (returns array of routes)
-            const fetchedRoutes = await fetchRoute(from, to);
-
-            if (fetchedRoutes.length > 0) {
-              // Build turn-by-turn directions for all routes
-              const allDirections: string[][] = [];
-              fetchedRoutes.forEach((route) => {
-                const directions: string[] = [];
-                route.legs.forEach((leg) => {
-                  leg.steps.forEach((step, index) => {
-                    const instruction = step.maneuver.instruction;
-                    const modifier = step.maneuver.modifier
-                      ? ` ${step.maneuver.modifier}`
-                      : '';
-                    const distance = formatDistance(step.distance);
-                    directions.push(
-                      `${index + 1}. ${instruction}${modifier} (${distance})`,
-                    );
-                  });
-                });
-                allDirections.push(directions);
-              });
-
-              // Store route data in state (first route)
-              if (fetchedRoutes[0]) {
-                setRouteData(fetchedRoutes[0]);
-              }
-              if (allDirections[0]) {
-                setRouteDirections(allDirections[0]);
-              }
-              setRouteOrigin(from);
-              setRouteDestination(to);
-
-              // Function to add all routes to map with proper styling
-              const addAllRoutesToMap = (routes: RouteData[], selectedIndex: number) => {
-                if (!map.current) {
-                  return;
-                }
-                // Remove existing route layers
-                for (let i = 0; i < 3; i++) {
-                  if (map.current.getLayer(`route-${i}`)) {
-                    map.current.removeLayer(`route-${i}`);
-                  }
-                  if (map.current.getSource(`route-${i}`)) {
-                    map.current.removeSource(`route-${i}`);
-                  }
-                }
-                // Add all routes as separate layers
-                routes.forEach((route, index) => {
-                  const isSelected = index === selectedIndex;
-                  map.current!.addSource(`route-${index}`, {
-                    type: 'geojson',
-                    data: {
-                      type: 'Feature',
-                      properties: {
-                        routeIndex: index,
-                        isSelected,
-                      },
-                      geometry: route.geometry,
-                    },
-                  });
-                  map.current!.addLayer({
-                    id: `route-${index}`,
-                    type: 'line',
-                    source: `route-${index}`,
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: {
-                      'line-color': isSelected ? '#0074D9' : '#7FC8F8', // Light blue for non-selected routes
-                      'line-width': isSelected ? 4 : 3,
-                      'line-opacity': isSelected ? 1 : 0.7, // Less grayed out
-                    },
-                  });
-                });
-                // Fit map to show all routes
-                const allBounds = routes.reduce((bounds, route) => {
-                  route.geometry.coordinates.forEach((coord) => {
-                    bounds.extend(coord as [number, number]);
-                  });
-                  return bounds;
-                }, new mapboxgl.LngLatBounds(from, from));
-                map.current.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
-                  padding: 50,
-                  maxZoom: 15,
-                  duration: 500,
-                });
-              };
-
-              // Function to update selected route styling
-              const updateMapRoute = (routeIndex: number, _routeData: RouteData) => {
-                if (!map.current) {
-                  return;
-                }
-                // Update all route layer styles
-                fetchedRoutes.forEach((_route, index) => {
-                  const isSelected = index === routeIndex;
-                  if (map.current!.getLayer(`route-${index}`)) {
-                    map.current!.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#7FC8F8'); // Light blue for non-selected
-                    map.current!.setPaintProperty(`route-${index}`, 'line-width', isSelected ? 4 : 3);
-                    map.current!.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7); // Less grayed out
-                  }
-                });
-                // Fit map to show selected route
-                const selectedRoute = fetchedRoutes[routeIndex];
-                if (selectedRoute) {
-                  const bounds = selectedRoute.geometry.coordinates.reduce(
-                    (bounds, coord) => bounds.extend(coord as [number, number]),
-                    new mapboxgl.LngLatBounds(from, from),
-                  );
-                  map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-                    padding: 50,
-                    maxZoom: 15,
-                    duration: 500,
-                  });
-                }
-              };
-
-              // Set up route change callback
-              if (directionsControlRef.current) {
-                directionsControlRef.current.setRouteChangeCallback(updateMapRoute);
-              }
-
-              // Add all routes to map (first one selected by default)
-              addAllRoutesToMap(fetchedRoutes, 0);
-
-              // Add click handlers to route layers for switching
-              fetchedRoutes.forEach((_route, index) => {
-                // Click handler to switch routes
-                const clickHandler = () => {
-                  if (directionsControlRef.current) {
-                    // Reopen directions if closed
-                    if (!directionsControlRef.current.isDirectionsVisible()) {
-                      directionsControlRef.current.reopenDirections();
-                    }
-                    // Switch to clicked route
-                    directionsControlRef.current.switchRoute(index);
-                  }
-                };
-                map.current!.on('click', `route-${index}`, clickHandler);
-
-                // Change cursor on hover for all routes (to indicate they're clickable)
-                const mouseEnterHandler = () => {
-                  map.current!.getCanvas().style.cursor = 'pointer';
-                };
-                const mouseLeaveHandler = () => {
-                  map.current!.getCanvas().style.cursor = '';
-                };
-                map.current!.on('mouseenter', `route-${index}`, mouseEnterHandler);
-                map.current!.on('mouseleave', `route-${index}`, mouseLeaveHandler);
-              });
-
-              // Show directions in Mapbox control with all routes
-              if (directionsControlRef.current) {
-                // Generate URLs for buttons
-                const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${from[1]},${from[0]}&destination=${to[1]},${to[0]}`;
-                const appleUrl = `https://maps.apple.com/?saddr=${from[1]},${from[0]}&daddr=${to[1]},${to[0]}`;
-                directionsControlRef.current.showDirections(fetchedRoutes, allDirections, googleUrl, appleUrl);
-              }
+            // Case 1: Route from searched location to active destination
+            const from: [number, number] = [center[0], center[1]]; // [lng, lat] - searched location
+            const to: [number, number] = [dest.coordinate.lng, dest.coordinate.lat]; // [lng, lat] - destination
+            await calculateAndDisplayRoute(from, to);
+          } else {
+            // Case 2: No active destination - use current location
+            const currentLocation = await getCurrentLocation();
+            if (currentLocation) {
+              // Route from current location to searched location
+              const from: [number, number] = currentLocation; // [lng, lat] - current location
+              const to: [number, number] = [center[0], center[1]]; // [lng, lat] - searched location
+              await calculateAndDisplayRoute(from, to);
             } else {
-              // Fallback: show straight line if route fetch fails
-              map.current.addSource('route', {
-                type: 'geojson',
-                data: {
-                  type: 'Feature',
-                  properties: {},
-                  geometry: {
-                    type: 'LineString',
-                    coordinates: [from, to],
-                  },
-                },
-              });
-              map.current.addLayer({
-                id: 'route',
-                type: 'line',
-                source: 'route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 'line-color': '#0074D9', 'line-width': 4 },
-              });
-              // Clear route data if fetch fails
+              // Could not get current location - clear route data
               setRouteData(null);
               setRouteDirections([]);
               setRouteOrigin(null);
@@ -417,15 +476,6 @@ export function TourMap({
               if (directionsControlRef.current) {
                 directionsControlRef.current.hideDirections();
               }
-            }
-          } else {
-            // Clear route data if no destination
-            setRouteData(null);
-            setRouteDirections([]);
-            setRouteOrigin(null);
-            setRouteDestination(null);
-            if (directionsControlRef.current) {
-              directionsControlRef.current.hideDirections();
             }
           }
         });
@@ -444,7 +494,7 @@ export function TourMap({
       map.current?.remove();
       map.current = null;
     };
-  }, [mapboxAccessToken, destinations, activeDestinationId, fetchRoute]);
+  }, [mapboxAccessToken, destinations, activeDestinationId, fetchRoute, getCurrentLocation]);
 
   // Update destinations ref whenever destinations change
   useEffect(() => {
@@ -725,7 +775,7 @@ export function TourMap({
           map.current.flyTo({
             center: coordinates[0],
             zoom: 12,
-            duration: 1500,
+            duration: 3000,
             essential: true,
           });
         } else {
@@ -744,10 +794,10 @@ export function TourMap({
         if (animationTimeoutRef.current) {
           clearTimeout(animationTimeoutRef.current);
         }
-        animationTimeoutRef.current = setTimeout(() => {
-          animationInProgressRef.current = false;
-          animationTimeoutRef.current = null;
-        }, 1500);
+        // animationTimeoutRef.current = setTimeout(() => {
+        //   animationInProgressRef.current = false;
+        //   animationTimeoutRef.current = null;
+        // }, 1500);
       }
     }
 
