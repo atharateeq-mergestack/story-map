@@ -26,7 +26,7 @@ type DestinationDetailPanelProps = {
 export function DestinationDetailPanel({ destination, onClose, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
   return (
     <div
-      className={`bg-background border border-foreground/20 rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+      className={`bg-background rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
         isBlurred ? 'blur-sm opacity-60' : 'blur-0 opacity-100'
       } ${isTop ? 'z-10' : 'z-0'}`}
     >
@@ -59,16 +59,17 @@ export function DestinationDetailPanel({ destination, onClose, isBlurred = false
           <p className="text-sm text-foreground/80 leading-relaxed">{destination.description}</p>
         )}
 
-        {/* Close */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          className="mt-4 w-full gap-2 bg-transparent flex justify-center items-center"
-        >
-          <X size={16} />
-          Back to overview
-        </Button>
+        <div className="flex justify-center items-center">
+          {/* Close */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="gap-2 bg-transparent rounded-full"
+          >
+            <X size={16} />
+          </Button>
+        </div>
       </div>
     </div>
   );
