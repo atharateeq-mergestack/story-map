@@ -151,9 +151,21 @@ export class DirectionsControl implements mapboxgl.IControl {
       const mapWidth = mapRect.width;
       const mapHeight = mapRect.height;
 
+      // Get the width of the Mapbox geocoder control to match it
+      const geocoderElement = mapContainer.querySelector('.mapboxgl-ctrl-geocoder') as HTMLElement;
+      let targetWidth = 320; // Default fallback width
+
+      if (geocoderElement) {
+        const geocoderRect = geocoderElement.getBoundingClientRect();
+        // Only use geocoder width if it's greater than 0 (fully rendered)
+        if (geocoderRect.width > 0) {
+          targetWidth = geocoderRect.width;
+        }
+      }
+
       // Calculate max dimensions: leave some padding and account for top offset (60px) and margins (20px total)
-      // Ensure we don't go negative
-      const maxWidth = Math.max(200, Math.min(320, mapWidth - 20)); // Min 200px, max 320px or map width minus padding
+      // Ensure we don't go negative and match geocoder width
+      const maxWidth = Math.max(200, Math.min(targetWidth, mapWidth - 20)); // Min 200px, match geocoder width or map width minus padding
       const maxHeight = Math.max(200, mapHeight - 80); // Min 200px, map height minus top offset and bottom padding
 
       this.directionsContainer.style.maxWidth = `${maxWidth}px`;
@@ -164,11 +176,27 @@ export class DirectionsControl implements mapboxgl.IControl {
     if (!this.directionsContainer) {
       this.directionsContainer = document.createElement('div');
       this.directionsContainer.className = 'mapbox-directions';
+
+      // Get initial width from geocoder if available
+      // Use requestAnimationFrame to ensure geocoder is fully rendered
+      let initialWidth = 320; // Default fallback
+      if (this.map) {
+        const mapContainer = this.map.getContainer();
+        const geocoderElement = mapContainer?.querySelector('.mapboxgl-ctrl-geocoder') as HTMLElement;
+        if (geocoderElement) {
+          const geocoderRect = geocoderElement.getBoundingClientRect();
+          // Only use geocoder width if it's greater than 0 (fully rendered)
+          if (geocoderRect.width > 0) {
+            initialWidth = geocoderRect.width;
+          }
+        }
+      }
+
       this.directionsContainer.style.cssText = `
         position: absolute;
         top: 60px;
-        right: 10px;
-        width: 320px;
+        right: 0px;
+        width: ${initialWidth}px;
         background: white;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -177,6 +205,7 @@ export class DirectionsControl implements mapboxgl.IControl {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
       `;
       this.container.appendChild(this.directionsContainer);
 
@@ -189,6 +218,12 @@ export class DirectionsControl implements mapboxgl.IControl {
         resizeObserver.observe(mapContainer);
         // Store observer for cleanup
         (this.directionsContainer as any)._resizeObserver = resizeObserver;
+
+        // Also observe the geocoder element to catch its width changes
+        const geocoderElement = mapContainer.querySelector('.mapboxgl-ctrl-geocoder') as HTMLElement;
+        if (geocoderElement) {
+          resizeObserver.observe(geocoderElement);
+        }
 
         // Also update on window resize as fallback
         const windowResizeHandler = () => {

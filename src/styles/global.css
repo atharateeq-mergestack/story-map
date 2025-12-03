@@ -477,3 +477,10 @@
     transform: scale(1);
   }
 }
+
+@layer components {
+  /* Hide Mapbox search clear button */
+  .mapboxgl-ctrl-geocoder--pin-right {
+    @apply hidden;
+  }
+}

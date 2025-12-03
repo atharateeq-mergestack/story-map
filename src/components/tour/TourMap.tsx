@@ -6,6 +6,15 @@ import mapboxgl from 'mapbox-gl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import destinationController from '@/store/destinationController';
 import searchController from '@/store/searchController';
+import {
+  addFallbackRoute,
+  addRouteHandlers,
+  addRoutesToMap,
+  clearAllRoutes as clearAllRoutesUtil,
+  fitMapToCoordinates,
+  initializeMap,
+  updateRouteStyling,
+} from '@/utils/map-utils';
 import { DirectionsControl } from './DirectionsControl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
@@ -158,32 +167,16 @@ export function TourMap({
       return;
     }
 
-    // Remove all route layers
-    for (let i = 0; i < 3; i++) {
-      if (map.current.getLayer(`route-${i}`)) {
-        map.current.removeLayer(`route-${i}`);
-      }
-      if (map.current.getSource(`route-${i}`)) {
-        map.current.removeSource(`route-${i}`);
-      }
-    }
-    // Also remove old single route if it exists
-    if (map.current.getSource('route')) {
-      map.current.removeLayer('route');
-      map.current.removeSource('route');
-    }
-    if (routeMarkerRef.current) {
-      routeMarkerRef.current.remove();
-      routeMarkerRef.current = null;
-    }
-    if (directionsControlRef.current) {
-      directionsControlRef.current.hideDirections();
-      updateMarkerZIndex(false);
-    }
-    setRouteData(null);
-    setRouteDirections([]);
-    setRouteOrigin(null);
-    setRouteDestination(null);
+    clearAllRoutesUtil(
+      map.current,
+      directionsControlRef,
+      routeMarkerRef,
+      updateMarkerZIndex,
+      setRouteData,
+      setRouteDirections,
+      setRouteOrigin,
+      setRouteDestination,
+    );
   }, [updateMarkerZIndex]);
 
   // Helper function to calculate and display route between two points
@@ -196,24 +189,17 @@ export function TourMap({
       return;
     }
 
-    // Remove previous route layers (all routes)
-    for (let i = 0; i < 3; i++) {
-      if (map.current.getLayer(`route-${i}`)) {
-        map.current.removeLayer(`route-${i}`);
-      }
-      if (map.current.getSource(`route-${i}`)) {
-        map.current.removeSource(`route-${i}`);
-      }
-    }
-    // Also remove old single route if it exists
-    if (map.current.getSource('route')) {
-      map.current.removeLayer('route');
-      map.current.removeSource('route');
-    }
-    if (routeMarkerRef.current) {
-      routeMarkerRef.current.remove();
-      routeMarkerRef.current = null;
-    }
+    // Clear previous routes
+    clearAllRoutesUtil(
+      map.current,
+      directionsControlRef,
+      routeMarkerRef,
+      updateMarkerZIndex,
+      setRouteData,
+      setRouteDirections,
+      setRouteOrigin,
+      setRouteDestination,
+    );
 
     // Fetch routes from Mapbox Directions API (returns array of routes)
     const fetchedRoutes = await fetchRoute(from, to);
@@ -248,87 +234,12 @@ export function TourMap({
       setRouteOrigin(from);
       setRouteDestination(to);
 
-      // Function to add all routes to map with proper styling
-      const addAllRoutesToMap = (routes: RouteData[], selectedIndex: number) => {
-        if (!map.current) {
-          return;
-        }
-        // Remove existing route layers
-        for (let i = 0; i < 3; i++) {
-          if (map.current.getLayer(`route-${i}`)) {
-            map.current.removeLayer(`route-${i}`);
-          }
-          if (map.current.getSource(`route-${i}`)) {
-            map.current.removeSource(`route-${i}`);
-          }
-        }
-        // Add all routes as separate layers
-        routes.forEach((route, index) => {
-          const isSelected = index === selectedIndex;
-          map.current!.addSource(`route-${index}`, {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {
-                routeIndex: index,
-                isSelected,
-              },
-              geometry: route.geometry,
-            },
-          });
-          map.current!.addLayer({
-            id: `route-${index}`,
-            type: 'line',
-            source: `route-${index}`,
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: {
-              'line-color': isSelected ? '#0074D9' : '#989a9c',
-              'line-width': 6,
-              'line-opacity': isSelected ? 1 : 0.7,
-            },
-          });
-        });
-        // Fit map to show all routes
-        const allBounds = routes.reduce((bounds, route) => {
-          route.geometry.coordinates.forEach((coord) => {
-            bounds.extend(coord as [number, number]);
-          });
-          return bounds;
-        }, new mapboxgl.LngLatBounds(from, from));
-        map.current.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
-          padding: 50,
-          maxZoom: 15,
-          duration: 500,
-        });
-      };
-
       // Function to update selected route styling
       const updateMapRoute = (routeIndex: number, _routeData: RouteData) => {
         if (!map.current) {
           return;
         }
-        // Update all route layer styles
-        fetchedRoutes.forEach((_route, index) => {
-          const isSelected = index === routeIndex;
-          if (map.current!.getLayer(`route-${index}`)) {
-            map.current!.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#989a9c');
-            map.current!.setPaintProperty(`route-${index}`, 'line-width', 6);
-            map.current!.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7);
-          }
-        });
-        // Fit map to show selected route
-        const selectedRoute = fetchedRoutes[routeIndex];
-        if (selectedRoute) {
-          const bounds = selectedRoute.geometry.coordinates.reduce(
-            (bounds, coord) => bounds.extend(coord as [number, number]),
-            new mapboxgl.LngLatBounds(from, from),
-          );
-          map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-            padding: 50,
-            maxZoom: 15,
-            duration: 500,
-          });
-        }
+        updateRouteStyling(map.current, fetchedRoutes, routeIndex, from);
       };
 
       // Set up route change callback
@@ -337,33 +248,10 @@ export function TourMap({
       }
 
       // Add all routes to map (first one selected by default)
-      addAllRoutesToMap(fetchedRoutes, 0);
+      addRoutesToMap(map.current, fetchedRoutes, 0, from);
 
       // Add click handlers to route layers for switching
-      fetchedRoutes.forEach((_route, index) => {
-        // Click handler to switch routes
-        const clickHandler = () => {
-          if (directionsControlRef.current) {
-            // Reopen directions if closed
-            if (!directionsControlRef.current.isDirectionsVisible()) {
-              directionsControlRef.current.reopenDirections();
-            }
-            // Switch to clicked route
-            directionsControlRef.current.switchRoute(index);
-          }
-        };
-        map.current!.on('click', `route-${index}`, clickHandler);
-
-        // Change cursor on hover for all routes (to indicate they're clickable)
-        const mouseEnterHandler = () => {
-          map.current!.getCanvas().style.cursor = 'pointer';
-        };
-        const mouseLeaveHandler = () => {
-          map.current!.getCanvas().style.cursor = '';
-        };
-        map.current!.on('mouseenter', `route-${index}`, mouseEnterHandler);
-        map.current!.on('mouseleave', `route-${index}`, mouseLeaveHandler);
-      });
+      addRouteHandlers(map.current, fetchedRoutes, directionsControlRef);
 
       // Show directions in Mapbox control with all routes
       if (directionsControlRef.current) {
@@ -375,24 +263,7 @@ export function TourMap({
       }
     } else {
       // Fallback: show straight line if route fetch fails
-      map.current.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: [from, to],
-          },
-        },
-      });
-      map.current.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#0074D9', 'line-width': 4 },
-      });
+      addFallbackRoute(map.current, from, to);
       // Clear route data if fetch fails
       setRouteData(null);
       setRouteDirections([]);
@@ -416,39 +287,45 @@ export function TourMap({
 
     mapboxgl.accessToken = mapboxAccessToken;
 
+    // Helper function to check if two coordinates are the same (with tolerance for floating point)
+    const areCoordinatesEqual = (
+      coord1: { lat: number; lng: number },
+      coord2: { lat: number; lng: number },
+    ): boolean => {
+      const tolerance = 0.0001;
+      return (
+        Math.abs(coord1.lat - coord2.lat) < tolerance
+        && Math.abs(coord1.lng - coord2.lng) < tolerance
+      );
+    };
+
+    // Get unique coordinates only (first destination at each coordinate)
+    const usedCoordinates: Array<{ lat: number; lng: number }> = [];
     const coordinates = destinations
-      .filter(dest => dest.coordinate)
+      .filter((dest) => {
+        if (!dest.coordinate) {
+          return false;
+        }
+        const isDuplicate = usedCoordinates.some(usedCoord =>
+          areCoordinatesEqual(usedCoord, dest.coordinate!),
+        );
+        if (!isDuplicate) {
+          usedCoordinates.push(dest.coordinate);
+          return true;
+        }
+        return false;
+      })
       .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
 
-    // Always initialize the map, even if there are no coordinates
-    const defaultCenter: [number, number] = [0, 0]; // [lng, lat] - world center
-    const initialCenter = coordinates.length > 0 ? coordinates[0] : defaultCenter;
-    const initialZoom = coordinates.length > 0 ? 11 : 2;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: initialCenter,
-      zoom: initialZoom,
-    }) as any;
+    // Initialize map using utility function
+    map.current = initializeMap(mapContainer.current, mapboxAccessToken, coordinates);
 
     map.current?.on('load', () => {
       setIsMapLoaded(true);
 
-      // Fit bounds if we have multiple coordinates
-      if (coordinates.length > 1 && map.current) {
-        const bounds = coordinates.reduce(
-          (bounds, coord) => bounds.extend(coord),
-          new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
-        );
-        map.current?.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, { padding: 50, maxZoom: 15 });
-      } else if (coordinates.length === 1 && map.current) {
-        // If only one coordinate, center on it with appropriate zoom
-        map.current.flyTo({
-          center: coordinates[0],
-          zoom: 12,
-          duration: 0,
-        });
+      // Fit map to coordinates using utility function
+      if (map.current) {
+        fitMapToCoordinates(map.current, coordinates);
       }
 
       // Initialize and add directions control
@@ -506,6 +383,27 @@ export function TourMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapboxAccessToken]);
 
+  useEffect(() => {
+    if (!searchedLocation) {
+      return;
+    }
+
+    const geocoderContainer = document.querySelector('.mapboxgl-ctrl-geocoder');
+    const input = geocoderContainer?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+
+    const handleInput = () => {
+      if (input.value.trim() === '') {
+        searchController.clearSearchedLocation();
+      }
+    };
+
+    input.addEventListener('input', handleInput);
+
+    return () => {
+      input.removeEventListener('input', handleInput);
+    };
+  }, [searchedLocation]);
+
   /**
    * useEffect 2: Set up all destination markers with coordinates
    * This runs when destinations change and sets up markers for all destinations
@@ -525,8 +423,43 @@ export function TourMap({
     });
     clickHandlersRef.current = [];
 
-    // Create markers for all destinations with coordinates
-    destinations.forEach((destination) => {
+    // Helper function to check if two coordinates are the same (with tolerance for floating point)
+    const areCoordinatesEqual = (
+      coord1: { lat: number; lng: number },
+      coord2: { lat: number; lng: number },
+    ): boolean => {
+      const tolerance = 0.0001;
+      return (
+        Math.abs(coord1.lat - coord2.lat) < tolerance
+        && Math.abs(coord1.lng - coord2.lng) < tolerance
+      );
+    };
+
+    // Track which coordinates have been used to avoid duplicate markers
+    const usedCoordinates: Array<{ lat: number; lng: number }> = [];
+
+    // Filter destinations to only include the first one at each unique coordinate
+    const uniqueDestinations = destinations.filter((destination) => {
+      if (!destination.coordinate) {
+        return false;
+      }
+
+      // Check if this coordinate has already been used
+      const isDuplicate = usedCoordinates.some(usedCoord =>
+        areCoordinatesEqual(usedCoord, destination.coordinate!),
+      );
+
+      if (!isDuplicate) {
+        // Mark this coordinate as used
+        usedCoordinates.push(destination.coordinate);
+        return true;
+      }
+
+      return false;
+    });
+
+    // Create markers only for unique destinations
+    uniqueDestinations.forEach((destination) => {
       if (!destination.coordinate) {
         return;
       }
@@ -684,9 +617,32 @@ export function TourMap({
         }
       });
 
-      // Get all coordinates and fit bounds to show all destinations
+      // Get unique coordinates only (first destination at each coordinate)
+      const usedCoordinates: Array<{ lat: number; lng: number }> = [];
+      const areCoordinatesEqual = (
+        coord1: { lat: number; lng: number },
+        coord2: { lat: number; lng: number },
+      ): boolean => {
+        const tolerance = 0.0001;
+        return (
+          Math.abs(coord1.lat - coord2.lat) < tolerance
+          && Math.abs(coord1.lng - coord2.lng) < tolerance
+        );
+      };
       const coordinates = destinations
-        .filter(dest => dest.coordinate)
+        .filter((dest) => {
+          if (!dest.coordinate) {
+            return false;
+          }
+          const isDuplicate = usedCoordinates.some(usedCoord =>
+            areCoordinatesEqual(usedCoord, dest.coordinate!),
+          );
+          if (!isDuplicate) {
+            usedCoordinates.push(dest.coordinate);
+            return true;
+          }
+          return false;
+        })
         .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
 
       if (coordinates.length > 0) {
@@ -852,7 +808,8 @@ export function TourMap({
 
     // Clear all routes and hide directions when selectedDestinationId changes
     clearAllRoutes();
-  }, [selectedDestinationId, isMapLoaded, clearAllRoutes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDestinationId, isMapLoaded]);
 
   /**
    * useEffect 6: Calculate and display routes based on searched location
@@ -902,6 +859,7 @@ export function TourMap({
     if (from && to) {
       calculateAndDisplayRoute(from, to);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchedLocation, getCurrentLocation]);
 
   // Check if we have any destinations with coordinates
