@@ -152,6 +152,40 @@ export function TourMap({
     });
   }, [selectedDestinationId, destinations]);
 
+  // Helper function to clear all routes and hide directions
+  const clearAllRoutes = useCallback(() => {
+    if (!map.current) {
+      return;
+    }
+
+    // Remove all route layers
+    for (let i = 0; i < 3; i++) {
+      if (map.current.getLayer(`route-${i}`)) {
+        map.current.removeLayer(`route-${i}`);
+      }
+      if (map.current.getSource(`route-${i}`)) {
+        map.current.removeSource(`route-${i}`);
+      }
+    }
+    // Also remove old single route if it exists
+    if (map.current.getSource('route')) {
+      map.current.removeLayer('route');
+      map.current.removeSource('route');
+    }
+    if (routeMarkerRef.current) {
+      routeMarkerRef.current.remove();
+      routeMarkerRef.current = null;
+    }
+    if (directionsControlRef.current) {
+      directionsControlRef.current.hideDirections();
+      updateMarkerZIndex(false);
+    }
+    setRouteData(null);
+    setRouteDirections([]);
+    setRouteOrigin(null);
+    setRouteDestination(null);
+  }, [updateMarkerZIndex]);
+
   // Helper function to calculate and display route between two points
   // This is used by the route rendering useEffect
   const calculateAndDisplayRoute = useCallback(async (
@@ -808,9 +842,22 @@ export function TourMap({
   }, [searchedLocation, isMapLoaded]);
 
   /**
-   * useEffect 5: Calculate and display routes based on searched location and selected destination
-   * This runs when searchedLocation or selectedDestinationId changes
-   * It calculates routes and displays them without removing destination markers
+   * useEffect 5: Clear routes when selectedDestinationId changes
+   * This runs when selectedDestinationId changes and removes all routes and direction modal
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // Clear all routes and hide directions when selectedDestinationId changes
+    clearAllRoutes();
+  }, [selectedDestinationId, isMapLoaded, clearAllRoutes]);
+
+  /**
+   * useEffect 6: Calculate and display routes based on searched location
+   * This runs when searchedLocation changes
+   * It calculates routes from selected destination (or current location) to searched location
    */
   useEffect(() => {
     if (!map.current || !isMapLoaded) {
@@ -819,27 +866,7 @@ export function TourMap({
 
     // If no searched location, clear routes
     if (!searchedLocation) {
-      // Remove all route layers
-      for (let i = 0; i < 3; i++) {
-        if (map.current.getLayer(`route-${i}`)) {
-          map.current.removeLayer(`route-${i}`);
-        }
-        if (map.current.getSource(`route-${i}`)) {
-          map.current.removeSource(`route-${i}`);
-        }
-      }
-      if (map.current.getSource('route')) {
-        map.current.removeLayer('route');
-        map.current.removeSource('route');
-      }
-      if (directionsControlRef.current) {
-        directionsControlRef.current.hideDirections();
-        updateMarkerZIndex(false);
-      }
-      setRouteData(null);
-      setRouteDirections([]);
-      setRouteOrigin(null);
-      setRouteDestination(null);
+      clearAllRoutes();
       return;
     }
 
@@ -865,14 +892,7 @@ export function TourMap({
           calculateAndDisplayRoute(from, to);
         } else {
           // Could not get current location - clear route data
-          setRouteData(null);
-          setRouteDirections([]);
-          setRouteOrigin(null);
-          setRouteDestination(null);
-          if (directionsControlRef.current) {
-            directionsControlRef.current.hideDirections();
-            updateMarkerZIndex(false);
-          }
+          clearAllRoutes();
         }
       });
       return;
@@ -882,7 +902,7 @@ export function TourMap({
     if (from && to) {
       calculateAndDisplayRoute(from, to);
     }
-  }, [searchedLocation, selectedDestinationId, destinations, isMapLoaded, calculateAndDisplayRoute, getCurrentLocation, updateMarkerZIndex]);
+  }, [searchedLocation, getCurrentLocation]);
 
   // Check if we have any destinations with coordinates
   const hasCoordinates = destinations.some(dest => dest.coordinate !== null);
