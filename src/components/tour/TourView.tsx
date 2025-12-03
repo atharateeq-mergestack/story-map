@@ -8,6 +8,7 @@ import { Heading } from '@/components/ui/common/Heading';
 import { Text } from '@/components/ui/common/Text';
 import { formatDate } from '@/lib/utils';
 import { Env } from '@/libs/Env';
+import destinationController from '@/store/destinationController';
 import { DestinationCard } from './DestinationCard';
 import { DestinationDetailPanel } from './DestinationDetailPanel';
 import { TourMap } from './TourMap';
@@ -69,15 +70,14 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
  */
 export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   // State Management:
-  // - activeDate: The currently visible/active date in the date navigation bar
-  // - activeDestinationId: The destination that should be highlighted on the map
-  // - selectedDestination: When set, switches the view to "detail mode" for that destination's day
+  // - activeDate: From destinationController store - The currently visible/active date in the date navigation bar
+  // - selectedDestinationId: From destinationController store - controls detail panel view
+  //   When set, switches the view to "detail mode" for that destination's day
   //   This causes all destinations for that day to expand into detail panels instead of cards
   // - topDestinationId: In detail view, tracks which destination panel is currently at the top
   //   of the viewport (used for blurring panels below it)
-  const [activeDate, setActiveDate] = useState<string | null>(dates[0] || null);
-  const [activeDestinationId, setActiveDestinationId] = useState<string | null>(null);
-  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
+  const activeDate = destinationController.useScopeState('activeDate')[0];
   const [topDestinationId, setTopDestinationId] = useState<string | null>(null);
 
   // Use refs to track previous values and prevent unnecessary re-renders
@@ -99,6 +99,39 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
   const allDestinations = dates.flatMap(date => destinationsByDate[date] || []);
   const totalDays = calculateTotalDays(tour.startDate, tour.endDate);
+
+  // Derive selectedDestination from selectedDestinationId using the store
+  const selectedDestination = selectedDestinationId
+    ? allDestinations.find(d => d.id === selectedDestinationId) || null
+    : null;
+
+  /**
+   * useEffect: Initialize activeDate on mount
+   * Sets the initial active date to the first date if not already set
+   */
+  useEffect(() => {
+    if (!activeDate && dates.length > 0) {
+      destinationController.setActiveDate(dates[0]);
+    }
+  }, [activeDate, dates]);
+
+  /**
+   * useEffect: Reset selectedDestinationId when activeDate changes
+   * If the selected destination's date doesn't match the new active date, clear the selection
+   */
+  useEffect(() => {
+    if (!activeDate || !selectedDestinationId) {
+      return;
+    }
+
+    const destination = allDestinations.find(d => d.id === selectedDestinationId);
+    // If selected destination exists but its date doesn't match active date, clear selection
+    if (destination && destination.date !== activeDate) {
+      destinationController.clearSelectedDestination();
+      setTopDestinationId(null);
+      prevTopDestinationIdRef.current = null;
+    }
+  }, [activeDate, selectedDestinationId, allDestinations]);
 
   /**
    * Scroll Handler for Detail View Mode
@@ -187,7 +220,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       if (topPanelId !== prevTopDestinationIdRef.current && topPanelId) {
         prevTopDestinationIdRef.current = topPanelId;
         setTopDestinationId(topPanelId);
-        setActiveDestinationId(topPanelId); // Sync map highlight
+        destinationController.setSelectedDestination(topPanelId); // Sync map highlight
       }
     };
 
@@ -246,16 +279,15 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       // If a destination is selected and user has scrolled to a different date,
       // clear the selected destination to exit detail view
       if (selectedDestination && newActiveDate && selectedDestination.date !== newActiveDate) {
-        setSelectedDestination(null);
-        setActiveDestinationId(null);
+        destinationController.clearSelectedDestination();
         setTopDestinationId(null);
         prevTopDestinationIdRef.current = null;
       }
 
       // Only update state if the date has actually changed (prevents unnecessary re-renders)
-      setActiveDate((prevDate) => {
-        return prevDate !== newActiveDate ? newActiveDate : prevDate;
-      });
+      if (activeDate !== newActiveDate) {
+        destinationController.setActiveDate(newActiveDate);
+      }
     };
 
     // Attach scroll listener with passive flag for better performance
@@ -274,7 +306,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * 1. Sets selectedDestination - This switches the view to "detail mode"
    *    - All destinations for that day will expand into detail panels
    *    - The scroll handler for detail view will start tracking which panel is at the top
-   * 2. Sets activeDestinationId - Highlights this destination on the map
+   * 2. Sets selectedDestinationId in store - Highlights this destination on the map
    * 3. Sets topDestinationId - Marks this as the initial top panel
    * 4. Sets activeDate - Updates the date nav to show this destination's date
    * 5. Scrolls to the destination's detail panel
@@ -282,13 +314,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * Note: Only updates selectedDestination if it's actually different to prevent unnecessary re-renders
    */
   const handleDestinationClick = (destination: Destination) => {
-    // Only update if destination is actually different
-    if (selectedDestination?.id !== destination.id) {
-      setSelectedDestination(destination);
-    }
-    setActiveDestinationId(destination.id);
+    destinationController.setSelectedDestination(destination.id);
+    destinationController.setActiveDate(destination.date);
     setTopDestinationId(destination.id);
-    setActiveDate(destination.date);
 
     // Scroll to the first destination panel after a brief delay
     // This ensures the DOM has updated with the new detail panels
@@ -318,11 +346,8 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     if (!destination) {
       return;
     }
-    // Only update if destination is actually different
-    if (selectedDestination?.id !== destination.id) {
-      setSelectedDestination(destination);
-    }
-    setActiveDestinationId(destination.id);
+    destinationController.setSelectedDestination(destination.id);
+    destinationController.setActiveDate(destination.date);
     setTopDestinationId(destination.id);
 
     // Scroll to the first destination panel after a brief delay
@@ -349,8 +374,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * - The detail view scroll handler stops running
    */
   const handleBackToOverview = () => {
-    setSelectedDestination(null);
-    setActiveDestinationId(null);
+    destinationController.clearSelectedDestination();
     setTopDestinationId(null);
   };
 
@@ -372,10 +396,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         top: elementPosition - navHeight - 20,
         behavior: 'smooth',
       });
-      setActiveDate(date);
+      destinationController.setActiveDate(date);
       // Clear detail view state to return to overview mode
-      setSelectedDestination(null);
-      setActiveDestinationId(null);
+      destinationController.clearSelectedDestination();
       setTopDestinationId(null);
     }
   };
@@ -564,6 +587,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                           // isTop: true if this destination's panel is currently at the top of viewport
                           // Used to highlight the active panel and sync with map
                           const isTop = topDestinationId === destination.id;
+                          const isActive = selectedDestinationId === destination.id;
 
                           // Blur Effect Logic:
                           // When in detail view (isDaySelected = true), we blur all panels except the top one
@@ -630,7 +654,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                     <div>
                                       <DestinationCard
                                         destination={destination}
-                                        isActive={activeDestinationId === destination.id}
+                                        isActive={isActive}
                                         onClick={() => handleDestinationClick(destination)}
                                       />
                                     </div>
@@ -652,7 +676,6 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                   >
                     <TourMap
                       destinations={dayDestinations}
-                      activeDestinationId={activeDestinationId}
                       mapboxAccessToken={mapboxToken}
                       onMarkerClick={handleMarkerClick}
                     />

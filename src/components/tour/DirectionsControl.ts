@@ -55,6 +55,17 @@ export class DirectionsControl implements mapboxgl.IControl {
   }
 
   onRemove(): void {
+    // Clean up ResizeObserver and window resize handler if they exist
+    if (this.directionsContainer) {
+      if ((this.directionsContainer as any)._resizeObserver) {
+        (this.directionsContainer as any)._resizeObserver.disconnect();
+        delete (this.directionsContainer as any)._resizeObserver;
+      }
+      if ((this.directionsContainer as any)._windowResizeHandler) {
+        window.removeEventListener('resize', (this.directionsContainer as any)._windowResizeHandler);
+        delete (this.directionsContainer as any)._windowResizeHandler;
+      }
+    }
     this.map = null;
     this.container.parentNode?.removeChild(this.container);
   }
@@ -125,6 +136,31 @@ export class DirectionsControl implements mapboxgl.IControl {
       return;
     }
 
+    // Calculate available space within the map container
+    const updateDirectionsSize = () => {
+      if (!this.map || !this.directionsContainer) {
+        return;
+      }
+
+      const mapContainer = this.map.getContainer();
+      if (!mapContainer) {
+        return;
+      }
+
+      const mapRect = mapContainer.getBoundingClientRect();
+      const mapWidth = mapRect.width;
+      const mapHeight = mapRect.height;
+
+      // Calculate max dimensions: leave some padding and account for top offset (60px) and margins (20px total)
+      // Ensure we don't go negative
+      const maxWidth = Math.max(200, Math.min(320, mapWidth - 20)); // Min 200px, max 320px or map width minus padding
+      const maxHeight = Math.max(200, mapHeight - 80); // Min 200px, map height minus top offset and bottom padding
+
+      this.directionsContainer.style.maxWidth = `${maxWidth}px`;
+      this.directionsContainer.style.maxHeight = `${maxHeight}px`;
+      this.directionsContainer.style.width = `${maxWidth}px`;
+    };
+
     if (!this.directionsContainer) {
       this.directionsContainer = document.createElement('div');
       this.directionsContainer.className = 'mapbox-directions';
@@ -133,17 +169,38 @@ export class DirectionsControl implements mapboxgl.IControl {
         top: 60px;
         right: 10px;
         width: 320px;
-        max-width: calc(100vw - 20px);
-        max-height: calc(100vh - 80px);
         background: white;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         z-index: 50;
         overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        display: flex;
+        flex-direction: column;
       `;
       this.container.appendChild(this.directionsContainer);
+
+      // Update size on map container resize
+      if (this.map) {
+        const mapContainer = this.map.getContainer();
+        const resizeObserver = new ResizeObserver(() => {
+          updateDirectionsSize();
+        });
+        resizeObserver.observe(mapContainer);
+        // Store observer for cleanup
+        (this.directionsContainer as any)._resizeObserver = resizeObserver;
+
+        // Also update on window resize as fallback
+        const windowResizeHandler = () => {
+          updateDirectionsSize();
+        };
+        window.addEventListener('resize', windowResizeHandler);
+        (this.directionsContainer as any)._windowResizeHandler = windowResizeHandler;
+      }
     }
+
+    // Update size whenever we render
+    updateDirectionsSize();
 
     const currentRoute = this.routes[this.selectedRouteIndex];
     if (!currentRoute) {
@@ -252,7 +309,8 @@ export class DirectionsControl implements mapboxgl.IControl {
 
     const directionsList = document.createElement('div');
     directionsList.style.cssText = `
-      max-height: 400px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
       padding: 12px 16px;
     `;

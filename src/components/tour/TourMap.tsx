@@ -4,6 +4,8 @@ import type { RouteData } from './DirectionsControl';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import mapboxgl from 'mapbox-gl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import destinationController from '@/store/destinationController';
+import searchController from '@/store/searchController';
 import { DirectionsControl } from './DirectionsControl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
@@ -23,14 +25,12 @@ type Destination = {
 
 type TourMapProps = {
   destinations: Destination[];
-  activeDestinationId: string | null;
   mapboxAccessToken: string;
   onMarkerClick?: (destinationId: string) => void;
 };
 
 export function TourMap({
   destinations,
-  activeDestinationId,
   mapboxAccessToken,
   onMarkerClick,
 }: TourMapProps) {
@@ -42,15 +42,11 @@ export function TourMap({
   const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const directionsControlRef = useRef<DirectionsControl | null>(null);
   const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const animationInProgressRef = useRef<boolean>(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  // Refs to track previous values and prevent unnecessary updates
-  const prevActiveDestinationIdRef = useRef<string | null>(null);
-  const prevDestinationsLengthRef = useRef<number>(0);
-  const prevDestinationsWithCoordsRef = useRef<string>('');
-  const destinationsRef = useRef<Destination[]>([]);
+  // Get selected destination and searched location from stores
+  const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
+  const searchedLocation = searchController.useScopeState('searchedLocation')[0];
 
   // Route data state (kept for potential future use, but display is handled by Mapbox control)
   const [, setRouteData] = useState<RouteData | null>(null);
@@ -120,13 +116,265 @@ export function TourMap({
     return `${minutes}m`;
   };
 
-  const formatDistance = (meters: number): string => {
+  const formatDistance = useCallback((meters: number): string => {
     if (meters < 1000) {
       return `${Math.round(meters)}m`;
     }
     return `${(meters / 1000).toFixed(2)} km`;
-  };
+  }, []);
 
+  // Helper function to update marker z-index based on directions visibility
+  const updateMarkerZIndex = useCallback((directionsVisible?: boolean) => {
+    // If directionsVisible is not provided, check the actual state from the control
+    const isVisible = directionsVisible !== undefined
+      ? directionsVisible
+      : directionsControlRef.current?.isDirectionsVisible() ?? false;
+
+    markersRef.current.forEach((marker) => {
+      const el = marker.getElement();
+      if (el) {
+        // When directions are visible, set z-index to 0 or negative to be below directions card (z-index: 50)
+        // When directions are hidden, restore normal z-index
+        if (isVisible) {
+          el.style.zIndex = '0';
+        } else {
+          // Restore based on selection state
+          const isSelected = selectedDestinationId
+            && destinations.find(
+              d => d.id === selectedDestinationId
+                && d.coordinate
+                && Math.abs(marker.getLngLat().lng - d.coordinate.lng) < 0.0001
+                && Math.abs(marker.getLngLat().lat - d.coordinate.lat) < 0.0001,
+            );
+          el.style.zIndex = isSelected ? '10' : '1';
+        }
+      }
+    });
+  }, [selectedDestinationId, destinations]);
+
+  // Helper function to calculate and display route between two points
+  // This is used by the route rendering useEffect
+  const calculateAndDisplayRoute = useCallback(async (
+    from: [number, number],
+    to: [number, number],
+  ) => {
+    if (!map.current) {
+      return;
+    }
+
+    // Remove previous route layers (all routes)
+    for (let i = 0; i < 3; i++) {
+      if (map.current.getLayer(`route-${i}`)) {
+        map.current.removeLayer(`route-${i}`);
+      }
+      if (map.current.getSource(`route-${i}`)) {
+        map.current.removeSource(`route-${i}`);
+      }
+    }
+    // Also remove old single route if it exists
+    if (map.current.getSource('route')) {
+      map.current.removeLayer('route');
+      map.current.removeSource('route');
+    }
+    if (routeMarkerRef.current) {
+      routeMarkerRef.current.remove();
+      routeMarkerRef.current = null;
+    }
+
+    // Fetch routes from Mapbox Directions API (returns array of routes)
+    const fetchedRoutes = await fetchRoute(from, to);
+
+    if (fetchedRoutes.length > 0) {
+      // Build turn-by-turn directions for all routes
+      const allDirections: string[][] = [];
+      fetchedRoutes.forEach((route) => {
+        const directions: string[] = [];
+        route.legs.forEach((leg) => {
+          leg.steps.forEach((step, index) => {
+            const instruction = step.maneuver.instruction;
+            const modifier = step.maneuver.modifier
+              ? ` ${step.maneuver.modifier}`
+              : '';
+            const distance = formatDistance(step.distance);
+            directions.push(
+              `${index + 1}. ${instruction}${modifier} (${distance})`,
+            );
+          });
+        });
+        allDirections.push(directions);
+      });
+
+      // Store route data in state (first route)
+      if (fetchedRoutes[0]) {
+        setRouteData(fetchedRoutes[0]);
+      }
+      if (allDirections[0]) {
+        setRouteDirections(allDirections[0]);
+      }
+      setRouteOrigin(from);
+      setRouteDestination(to);
+
+      // Function to add all routes to map with proper styling
+      const addAllRoutesToMap = (routes: RouteData[], selectedIndex: number) => {
+        if (!map.current) {
+          return;
+        }
+        // Remove existing route layers
+        for (let i = 0; i < 3; i++) {
+          if (map.current.getLayer(`route-${i}`)) {
+            map.current.removeLayer(`route-${i}`);
+          }
+          if (map.current.getSource(`route-${i}`)) {
+            map.current.removeSource(`route-${i}`);
+          }
+        }
+        // Add all routes as separate layers
+        routes.forEach((route, index) => {
+          const isSelected = index === selectedIndex;
+          map.current!.addSource(`route-${index}`, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {
+                routeIndex: index,
+                isSelected,
+              },
+              geometry: route.geometry,
+            },
+          });
+          map.current!.addLayer({
+            id: `route-${index}`,
+            type: 'line',
+            source: `route-${index}`,
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: {
+              'line-color': isSelected ? '#0074D9' : '#989a9c',
+              'line-width': 6,
+              'line-opacity': isSelected ? 1 : 0.7,
+            },
+          });
+        });
+        // Fit map to show all routes
+        const allBounds = routes.reduce((bounds, route) => {
+          route.geometry.coordinates.forEach((coord) => {
+            bounds.extend(coord as [number, number]);
+          });
+          return bounds;
+        }, new mapboxgl.LngLatBounds(from, from));
+        map.current.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
+          padding: 50,
+          maxZoom: 15,
+          duration: 500,
+        });
+      };
+
+      // Function to update selected route styling
+      const updateMapRoute = (routeIndex: number, _routeData: RouteData) => {
+        if (!map.current) {
+          return;
+        }
+        // Update all route layer styles
+        fetchedRoutes.forEach((_route, index) => {
+          const isSelected = index === routeIndex;
+          if (map.current!.getLayer(`route-${index}`)) {
+            map.current!.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#989a9c');
+            map.current!.setPaintProperty(`route-${index}`, 'line-width', 6);
+            map.current!.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7);
+          }
+        });
+        // Fit map to show selected route
+        const selectedRoute = fetchedRoutes[routeIndex];
+        if (selectedRoute) {
+          const bounds = selectedRoute.geometry.coordinates.reduce(
+            (bounds, coord) => bounds.extend(coord as [number, number]),
+            new mapboxgl.LngLatBounds(from, from),
+          );
+          map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
+            padding: 50,
+            maxZoom: 15,
+            duration: 500,
+          });
+        }
+      };
+
+      // Set up route change callback
+      if (directionsControlRef.current) {
+        directionsControlRef.current.setRouteChangeCallback(updateMapRoute);
+      }
+
+      // Add all routes to map (first one selected by default)
+      addAllRoutesToMap(fetchedRoutes, 0);
+
+      // Add click handlers to route layers for switching
+      fetchedRoutes.forEach((_route, index) => {
+        // Click handler to switch routes
+        const clickHandler = () => {
+          if (directionsControlRef.current) {
+            // Reopen directions if closed
+            if (!directionsControlRef.current.isDirectionsVisible()) {
+              directionsControlRef.current.reopenDirections();
+            }
+            // Switch to clicked route
+            directionsControlRef.current.switchRoute(index);
+          }
+        };
+        map.current!.on('click', `route-${index}`, clickHandler);
+
+        // Change cursor on hover for all routes (to indicate they're clickable)
+        const mouseEnterHandler = () => {
+          map.current!.getCanvas().style.cursor = 'pointer';
+        };
+        const mouseLeaveHandler = () => {
+          map.current!.getCanvas().style.cursor = '';
+        };
+        map.current!.on('mouseenter', `route-${index}`, mouseEnterHandler);
+        map.current!.on('mouseleave', `route-${index}`, mouseLeaveHandler);
+      });
+
+      // Show directions in Mapbox control with all routes
+      if (directionsControlRef.current) {
+        // Generate URLs for buttons
+        const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${from[1]},${from[0]}&destination=${to[1]},${to[0]}`;
+        const appleUrl = `https://maps.apple.com/?saddr=${from[1]},${from[0]}&daddr=${to[1]},${to[0]}`;
+        directionsControlRef.current.showDirections(fetchedRoutes, allDirections, googleUrl, appleUrl);
+        updateMarkerZIndex(true);
+      }
+    } else {
+      // Fallback: show straight line if route fetch fails
+      map.current.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: [from, to],
+          },
+        },
+      });
+      map.current.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#0074D9', 'line-width': 4 },
+      });
+      // Clear route data if fetch fails
+      setRouteData(null);
+      setRouteDirections([]);
+      setRouteOrigin(null);
+      setRouteDestination(null);
+      if (directionsControlRef.current) {
+        directionsControlRef.current.hideDirections();
+        updateMarkerZIndex(false);
+      }
+    }
+  }, [fetchRoute, formatDistance, updateMarkerZIndex]);
+
+  /**
+   * useEffect 1: Initialize map and set up all destination markers with coordinates
+   * This runs once on mount and sets up all markers for all destinations
+   */
   useEffect(() => {
     if (!mapContainer.current || map.current) {
       return;
@@ -139,7 +387,6 @@ export function TourMap({
       .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
 
     // Always initialize the map, even if there are no coordinates
-    // Use a default center (e.g., world center) if no coordinates available
     const defaultCenter: [number, number] = [0, 0]; // [lng, lat] - world center
     const initialCenter = coordinates.length > 0 ? coordinates[0] : defaultCenter;
     const initialZoom = coordinates.length > 0 ? 11 : 2;
@@ -153,7 +400,8 @@ export function TourMap({
 
     map.current?.on('load', () => {
       setIsMapLoaded(true);
-      // Only fit bounds if we have multiple coordinates
+
+      // Fit bounds if we have multiple coordinates
       if (coordinates.length > 1 && map.current) {
         const bounds = coordinates.reduce(
           (bounds, coord) => bounds.extend(coord),
@@ -177,222 +425,6 @@ export function TourMap({
       directionsControlRef.current = directionsControl;
       map.current?.addControl(directionsControl, 'top-right');
 
-      // Helper function to calculate and display route between two points
-      const calculateAndDisplayRoute = async (
-        from: [number, number],
-        to: [number, number],
-      ) => {
-        if (!map.current) {
-          return;
-        }
-
-        // Remove previous route layers (all routes)
-        for (let i = 0; i < 3; i++) {
-          if (map.current.getLayer(`route-${i}`)) {
-            map.current.removeLayer(`route-${i}`);
-          }
-          if (map.current.getSource(`route-${i}`)) {
-            map.current.removeSource(`route-${i}`);
-          }
-        }
-        // Also remove old single route if it exists
-        if (map.current.getSource('route')) {
-          map.current.removeLayer('route');
-          map.current.removeSource('route');
-        }
-        if (routeMarkerRef.current) {
-          routeMarkerRef.current.remove();
-          routeMarkerRef.current = null;
-        }
-
-        // Fetch routes from Mapbox Directions API (returns array of routes)
-        const fetchedRoutes = await fetchRoute(from, to);
-
-        if (fetchedRoutes.length > 0) {
-          // Build turn-by-turn directions for all routes
-          const allDirections: string[][] = [];
-          fetchedRoutes.forEach((route) => {
-            const directions: string[] = [];
-            route.legs.forEach((leg) => {
-              leg.steps.forEach((step, index) => {
-                const instruction = step.maneuver.instruction;
-                const modifier = step.maneuver.modifier
-                  ? ` ${step.maneuver.modifier}`
-                  : '';
-                const distance = formatDistance(step.distance);
-                directions.push(
-                  `${index + 1}. ${instruction}${modifier} (${distance})`,
-                );
-              });
-            });
-            allDirections.push(directions);
-          });
-
-          // Store route data in state (first route)
-          if (fetchedRoutes[0]) {
-            setRouteData(fetchedRoutes[0]);
-          }
-          if (allDirections[0]) {
-            setRouteDirections(allDirections[0]);
-          }
-          setRouteOrigin(from);
-          setRouteDestination(to);
-
-          // Function to add all routes to map with proper styling
-          const addAllRoutesToMap = (routes: RouteData[], selectedIndex: number) => {
-            if (!map.current) {
-              return;
-            }
-            // Remove existing route layers
-            for (let i = 0; i < 3; i++) {
-              if (map.current.getLayer(`route-${i}`)) {
-                map.current.removeLayer(`route-${i}`);
-              }
-              if (map.current.getSource(`route-${i}`)) {
-                map.current.removeSource(`route-${i}`);
-              }
-            }
-            // Add all routes as separate layers
-            routes.forEach((route, index) => {
-              const isSelected = index === selectedIndex;
-              map.current!.addSource(`route-${index}`, {
-                type: 'geojson',
-                data: {
-                  type: 'Feature',
-                  properties: {
-                    routeIndex: index,
-                    isSelected,
-                  },
-                  geometry: route.geometry,
-                },
-              });
-              map.current!.addLayer({
-                id: `route-${index}`,
-                type: 'line',
-                source: `route-${index}`,
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                  'line-color': isSelected ? '#0074D9' : '#7FC8F8', // Light blue for non-selected routes
-                  'line-width': isSelected ? 4 : 3,
-                  'line-opacity': isSelected ? 1 : 0.7, // Less grayed out
-                },
-              });
-            });
-            // Fit map to show all routes
-            const allBounds = routes.reduce((bounds, route) => {
-              route.geometry.coordinates.forEach((coord) => {
-                bounds.extend(coord as [number, number]);
-              });
-              return bounds;
-            }, new mapboxgl.LngLatBounds(from, from));
-            map.current.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
-              padding: 50,
-              maxZoom: 15,
-              duration: 500,
-            });
-          };
-
-          // Function to update selected route styling
-          const updateMapRoute = (routeIndex: number, _routeData: RouteData) => {
-            if (!map.current) {
-              return;
-            }
-            // Update all route layer styles
-            fetchedRoutes.forEach((_route, index) => {
-              const isSelected = index === routeIndex;
-              if (map.current!.getLayer(`route-${index}`)) {
-                map.current!.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#7FC8F8'); // Light blue for non-selected
-                map.current!.setPaintProperty(`route-${index}`, 'line-width', isSelected ? 4 : 3);
-                map.current!.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7); // Less grayed out
-              }
-            });
-            // Fit map to show selected route
-            const selectedRoute = fetchedRoutes[routeIndex];
-            if (selectedRoute) {
-              const bounds = selectedRoute.geometry.coordinates.reduce(
-                (bounds, coord) => bounds.extend(coord as [number, number]),
-                new mapboxgl.LngLatBounds(from, from),
-              );
-              map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-                padding: 50,
-                maxZoom: 15,
-                duration: 500,
-              });
-            }
-          };
-
-          // Set up route change callback
-          if (directionsControlRef.current) {
-            directionsControlRef.current.setRouteChangeCallback(updateMapRoute);
-          }
-
-          // Add all routes to map (first one selected by default)
-          addAllRoutesToMap(fetchedRoutes, 0);
-
-          // Add click handlers to route layers for switching
-          fetchedRoutes.forEach((_route, index) => {
-            // Click handler to switch routes
-            const clickHandler = () => {
-              if (directionsControlRef.current) {
-                // Reopen directions if closed
-                if (!directionsControlRef.current.isDirectionsVisible()) {
-                  directionsControlRef.current.reopenDirections();
-                }
-                // Switch to clicked route
-                directionsControlRef.current.switchRoute(index);
-              }
-            };
-            map.current!.on('click', `route-${index}`, clickHandler);
-
-            // Change cursor on hover for all routes (to indicate they're clickable)
-            const mouseEnterHandler = () => {
-              map.current!.getCanvas().style.cursor = 'pointer';
-            };
-            const mouseLeaveHandler = () => {
-              map.current!.getCanvas().style.cursor = '';
-            };
-            map.current!.on('mouseenter', `route-${index}`, mouseEnterHandler);
-            map.current!.on('mouseleave', `route-${index}`, mouseLeaveHandler);
-          });
-
-          // Show directions in Mapbox control with all routes
-          if (directionsControlRef.current) {
-            // Generate URLs for buttons
-            const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${from[1]},${from[0]}&destination=${to[1]},${to[0]}`;
-            const appleUrl = `https://maps.apple.com/?saddr=${from[1]},${from[0]}&daddr=${to[1]},${to[0]}`;
-            directionsControlRef.current.showDirections(fetchedRoutes, allDirections, googleUrl, appleUrl);
-          }
-        } else {
-          // Fallback: show straight line if route fetch fails
-          map.current.addSource('route', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: [from, to],
-              },
-            },
-          });
-          map.current.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': '#0074D9', 'line-width': 4 },
-          });
-          // Clear route data if fetch fails
-          setRouteData(null);
-          setRouteDirections([]);
-          setRouteOrigin(null);
-          setRouteDestination(null);
-          if (directionsControlRef.current) {
-            directionsControlRef.current.hideDirections();
-          }
-        }
-      };
-
       // Add search if MapboxGeocoder exists
       if (MapboxGeocoder) {
         const geocoder = new MapboxGeocoder({
@@ -403,7 +435,7 @@ export function TourMap({
         });
         map.current?.addControl(geocoder as any);
 
-        geocoder.on('result', async (e: any) => {
+        geocoder.on('result', (e: any) => {
           const { center, place_name } = e.result;
           if (!map.current) {
             return;
@@ -414,70 +446,13 @@ export function TourMap({
               marker.togglePopup();
             }
           });
-          // Remove previous search marker if exists
-          if (searchMarkerRef.current) {
-            searchMarkerRef.current.remove();
-            searchMarkerRef.current = null;
-          }
-          // Create red marker for searched location
-          const searchMarkerEl = document.createElement('div');
-          searchMarkerEl.style.cssText = `
-            width: 30px;
-            height: 30px;
-            background-color: #FF4444;
-            border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            cursor: pointer;
-          `;
-          const searchMarker = new mapboxgl.Marker({
-            element: searchMarkerEl,
-            anchor: 'center',
-          })
-            .setLngLat(center)
-            .setPopup(
-              new mapboxgl.Popup({
-                offset: 15,
-                closeButton: true,
-                closeOnClick: false,
-              }).setHTML(
-                `<div style="padding: 8px;">
-                  <strong style="font-size: 14px;">${place_name || 'Searched Location'}</strong>
-                </div>`,
-              ),
-            )
-            .addTo(map.current as any);
-          searchMarkerRef.current = searchMarker as any;
-          map.current.flyTo({ center, zoom: 14 });
 
-          // Calculate and display route:
-          // 1. If there's an active destination, show route from searched location to destination
-          // 2. If no active destination, get current location and show route from current location to searched location
-          const dest = destinations.find(d => d.id === activeDestinationId);
-          if (dest?.coordinate) {
-            // Case 1: Route from searched location to active destination
-            const from: [number, number] = [center[0], center[1]]; // [lng, lat] - searched location
-            const to: [number, number] = [dest.coordinate.lng, dest.coordinate.lat]; // [lng, lat] - destination
-            await calculateAndDisplayRoute(from, to);
-          } else {
-            // Case 2: No active destination - use current location
-            const currentLocation = await getCurrentLocation();
-            if (currentLocation) {
-              // Route from current location to searched location
-              const from: [number, number] = currentLocation; // [lng, lat] - current location
-              const to: [number, number] = [center[0], center[1]]; // [lng, lat] - searched location
-              await calculateAndDisplayRoute(from, to);
-            } else {
-              // Could not get current location - clear route data
-              setRouteData(null);
-              setRouteDirections([]);
-              setRouteOrigin(null);
-              setRouteDestination(null);
-              if (directionsControlRef.current) {
-                directionsControlRef.current.hideDirections();
-              }
-            }
-          }
+          // Save searched location to searchController
+          // The route calculation will be handled by a separate useEffect
+          searchController.setSearchedLocation(center, place_name || 'Searched Location');
+
+          // Fly to searched location
+          map.current.flyTo({ center, zoom: 14 });
         });
       }
     });
@@ -494,72 +469,17 @@ export function TourMap({
       map.current?.remove();
       map.current = null;
     };
-  }, [mapboxAccessToken, destinations, activeDestinationId, fetchRoute, getCurrentLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapboxAccessToken]);
 
-  // Update destinations ref whenever destinations change
-  useEffect(() => {
-    destinationsRef.current = destinations;
-  }, [destinations]);
-
-  // Clear route data when active destination changes
-  useEffect(() => {
-    if (!activeDestinationId) {
-      setRouteData(null);
-      setRouteDirections([]);
-      setRouteOrigin(null);
-      setRouteDestination(null);
-      // Also remove all route layers from map
-      if (map.current) {
-        for (let i = 0; i < 3; i++) {
-          if (map.current.getLayer(`route-${i}`)) {
-            map.current.removeLayer(`route-${i}`);
-          }
-          if (map.current.getSource(`route-${i}`)) {
-            map.current.removeSource(`route-${i}`);
-          }
-        }
-        // Also remove old single route if it exists
-        if (map.current.getSource('route')) {
-          map.current.removeLayer('route');
-          map.current.removeSource('route');
-        }
-      }
-      if (routeMarkerRef.current) {
-        routeMarkerRef.current.remove();
-        routeMarkerRef.current = null;
-      }
-      // Hide directions control
-      if (directionsControlRef.current) {
-        directionsControlRef.current.hideDirections();
-      }
-    }
-  }, [activeDestinationId]);
-
-  // Only update markers and zoom when activeDestinationId changes or number of destinations changes
+  /**
+   * useEffect 2: Set up all destination markers with coordinates
+   * This runs when destinations change and sets up markers for all destinations
+   */
   useEffect(() => {
     if (!map.current || !isMapLoaded) {
       return;
     }
-
-    const currentDestinations = destinationsRef.current;
-    const destinationsLength = currentDestinations.length;
-
-    // Create a hash of destinations with coordinates to detect coordinate changes
-    const destinationsWithCoords = currentDestinations
-      .filter(dest => dest.coordinate)
-      .map(dest => `${dest.id}:${dest.coordinate?.lat},${dest.coordinate?.lng}`)
-      .sort()
-      .join('|');
-
-    // // Only update if activeDestinationId changed, number of destinations changed, or coordinates changed
-    // if (!hasActiveDestinationIdChanged && !hasDestinationsLengthChanged && !hasDestinationsWithCoordsChanged) {
-    //   return;
-    // }
-
-    // Update refs
-    prevActiveDestinationIdRef.current = activeDestinationId;
-    prevDestinationsLengthRef.current = destinationsLength;
-    prevDestinationsWithCoordsRef.current = destinationsWithCoords;
 
     // Remove all existing markers
     markersRef.current.forEach(marker => marker.remove());
@@ -571,25 +491,15 @@ export function TourMap({
     });
     clickHandlersRef.current = [];
 
-    // Filter destinations: if activeDestinationId is set, only show that destination
-    const destinationsToShow = activeDestinationId
-      ? currentDestinations.filter(dest => dest.id === activeDestinationId)
-      : currentDestinations;
-
-    // Create markers first (before animation) so they appear together
-    const markerMap = new Map<string, mapboxgl.Marker>();
-
-    destinationsToShow.forEach((destination) => {
+    // Create markers for all destinations with coordinates
+    destinations.forEach((destination) => {
       if (!destination.coordinate) {
         return;
       }
 
-      // Use Mapbox's native Marker with proper styling
+      // Create marker element
       const el = document.createElement('div');
       el.className = 'destination-marker';
-
-      // Use Mapbox's default marker styling as base, with custom image
-      // No transitions or animations - marker must stay fixed at coordinates
       el.style.width = '40px';
       el.style.height = '60px';
       el.style.backgroundImage = 'url(/marker-pin.svg)';
@@ -599,35 +509,24 @@ export function TourMap({
       el.style.cursor = 'pointer';
       el.style.position = 'absolute';
       el.style.pointerEvents = 'auto';
-      // Remove any transitions that could cause marker movement
       el.style.transition = 'none';
       el.style.transform = 'none';
 
-      // Change size and styling on active destination
-      if (activeDestinationId === destination.id) {
-        el.style.width = '50px';
-        el.style.height = '75px';
-        el.style.zIndex = '10';
-        el.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
-      }
-
-      // Create Mapbox native marker with anchor point at bottom center
-      // Marker will stay fixed at its geographic coordinates during zoom/pan
+      // Create Mapbox native marker
       const marker = new mapboxgl.Marker({
         element: el,
-        anchor: 'bottom', // Mapbox native anchor point - bottom of marker pin
+        anchor: 'bottom',
         offset: [0, 0],
-        draggable: false, // Ensure marker is not draggable
+        draggable: false,
       })
         .setLngLat([destination.coordinate.lng, destination.coordinate.lat]);
 
-      // Create Mapbox native popup positioned above the marker
-      // Offset: [x, y] where y is negative to position above the marker
+      // Create popup
       const popup = new mapboxgl.Popup({
-        offset: [0, -50], // Position popup above the marker (negative y offset)
+        offset: [0, -50],
         closeButton: true,
         closeOnClick: false,
-        anchor: 'bottom', // Anchor popup to bottom, so it sits above marker
+        anchor: 'bottom',
         className: 'mapboxgl-popup destination-popup',
         maxWidth: '300px',
       }).setHTML(
@@ -652,7 +551,7 @@ export function TourMap({
         </div>`,
       );
 
-      // Attach popup to marker - this ensures it positions relative to the marker
+      // Attach popup to marker
       marker.setPopup(popup).addTo(map.current as any);
 
       // Style the close button after popup is added
@@ -681,104 +580,93 @@ export function TourMap({
           const handleMouseLeave = () => {
             closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
           };
+          // Event listeners are cleaned up in useEffect cleanup via clickHandlersRef
           closeButton.addEventListener('mouseenter', handleMouseEnter);
           closeButton.addEventListener('mouseleave', handleMouseLeave);
-          // Store handlers for cleanup (popup will be removed with marker cleanup)
+
+          // Store handlers for cleanup (handled in useEffect cleanup)
+          clickHandlersRef.current.push(
+            { element: closeButton, handler: handleMouseEnter },
+            { element: closeButton, handler: handleMouseLeave },
+          );
         }
       };
       popup.on('open', styleCloseButton);
 
-      // Store marker by destination ID for easy lookup
-      markerMap.set(destination.id, marker as any);
-
-      // Use Mapbox's built-in click handling via popup
+      // Add click handler
       const clickHandler = () => {
         if (onMarkerClick) {
           onMarkerClick(destination.id);
         }
-        // Also toggle popup on click
         marker.togglePopup();
       };
+      // Event listener is cleaned up in useEffect cleanup via clickHandlersRef
       el.addEventListener('click', clickHandler);
       clickHandlersRef.current.push({ element: el, handler: clickHandler });
 
       markersRef.current.push(marker as any);
     });
 
-    // Animate the map with markers already visible - single smooth animation
-    if (activeDestinationId && destinationsToShow.length > 0) {
-      const activeDest = destinationsToShow[0];
-      if (activeDest?.coordinate && map.current && !animationInProgressRef.current) {
-        const targetCenter: [number, number] = [activeDest.coordinate.lng, activeDest.coordinate.lat];
-        const currentCenter = map.current.getCenter();
-        const currentZoom = map.current.getZoom();
+    return () => {
+      // Clean up all event listeners (including close button handlers)
+      clickHandlersRef.current.forEach(({ element, handler }) => {
+        element.removeEventListener('click', handler);
+        element.removeEventListener('mouseenter', handler);
+        element.removeEventListener('mouseleave', handler);
+      });
+      clickHandlersRef.current = [];
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+    };
+  }, [destinations, isMapLoaded, onMarkerClick]);
 
-        // Check if we're already close to the target (within 0.001 degrees and zoom level)
-        const isAlreadyAtLocation
-          = Math.abs(currentCenter.lng - targetCenter[0]) < 0.001
-            && Math.abs(currentCenter.lat - targetCenter[1]) < 0.001
-            && Math.abs(currentZoom - 15) < 1;
+  /**
+   * useEffect 3: Listen to selected destination from store and fly to it
+   * This runs when selectedDestinationId changes and flies to the destination if it exists
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
 
-        if (!isAlreadyAtLocation) {
-          // Prevent multiple animations
-          animationInProgressRef.current = true;
-
-          // Cancel any existing animations
-          map.current.stop();
-
-          // Single smooth zoom to destination
-          map.current.flyTo({
-            center: targetCenter,
-            zoom: 15,
-            duration: 1500,
-            essential: true, // This ensures the animation completes
-          });
-
-          // Open popup after animation completes
-          const activeMarker = markerMap.get(activeDestinationId);
-          if (activeMarker) {
-            // Clear any existing timeout
-            if (popupTimeoutRef.current) {
-              clearTimeout(popupTimeoutRef.current);
-            }
-            // Wait for animation to complete before opening popup
-            popupTimeoutRef.current = setTimeout(() => {
-              activeMarker.togglePopup();
-              popupTimeoutRef.current = null;
-              animationInProgressRef.current = false;
-            }, 1500);
-          } else {
-            animationInProgressRef.current = false;
-          }
-        } else {
-          // Already at location, just open popup
-          const activeMarker = markerMap.get(activeDestinationId);
-          if (activeMarker) {
-            activeMarker.togglePopup();
-          }
+    // If no destination is selected, show all destinations
+    if (!selectedDestinationId) {
+      // Reset all marker styling to default
+      markersRef.current.forEach((m) => {
+        const el = m.getElement();
+        if (el) {
+          el.style.width = '40px';
+          el.style.height = '60px';
+          el.style.filter = 'none';
         }
-      }
-    } else if (!activeDestinationId && destinationsLength > 0 && !animationInProgressRef.current) {
-      // If no destination is selected, zoom out to show all destinations
-      // Only do this if we're not already animating
-      const coordinates = currentDestinations
+      });
+      // Update z-index for all markers based on directions visibility
+      updateMarkerZIndex();
+
+      // Close all open popups
+      markersRef.current.forEach((marker) => {
+        if (marker.getPopup()?.isOpen()) {
+          marker.togglePopup();
+        }
+      });
+
+      // Get all coordinates and fit bounds to show all destinations
+      const coordinates = destinations
         .filter(dest => dest.coordinate)
         .map(dest => [dest.coordinate!.lng, dest.coordinate!.lat] as [number, number]);
 
-      if (coordinates.length > 0 && map.current) {
-        // Cancel any existing animations
+      if (coordinates.length > 0) {
         map.current.stop();
-
-        animationInProgressRef.current = true;
-
         if (coordinates.length === 1) {
+          // If only one coordinate, center on it with appropriate zoom
           map.current.flyTo({
             center: coordinates[0],
             zoom: 12,
-            duration: 3000,
+            duration: 1500,
             essential: true,
           });
         } else {
+          // Fit bounds to show all destinations
           const bounds = coordinates.reduce(
             (bounds, coord) => bounds.extend(coord),
             new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
@@ -789,42 +677,212 @@ export function TourMap({
             duration: 1500,
           });
         }
-
-        // Reset animation flag after animation completes
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-        }
-        // animationTimeoutRef.current = setTimeout(() => {
-        //   animationInProgressRef.current = false;
-        //   animationTimeoutRef.current = null;
-        // }, 1500);
       }
+
+      return;
     }
 
+    // Find the destination in the destinations array
+    const destination = destinations.find(d => d.id === selectedDestinationId);
+
+    if (!destination?.coordinate) {
+      return;
+    }
+
+    // Find the marker for this destination
+    const marker = markersRef.current.find((m) => {
+      const lngLat = m.getLngLat();
+      return (
+        Math.abs(lngLat.lng - destination.coordinate!.lng) < 0.0001
+        && Math.abs(lngLat.lat - destination.coordinate!.lat) < 0.0001
+      );
+    });
+
+    if (!marker) {
+      return;
+    }
+
+    // Update marker styling for selected destination
+    // Use updateMarkerZIndex to ensure correct z-index based on directions visibility
+    markersRef.current.forEach((m) => {
+      const el = m.getElement();
+      if (el) {
+        const isSelected = m === marker;
+        if (isSelected) {
+          el.style.width = '50px';
+          el.style.height = '75px';
+          el.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
+        } else {
+          el.style.width = '40px';
+          el.style.height = '60px';
+          el.style.filter = 'none';
+        }
+      }
+    });
+    // Update z-index for all markers based on directions visibility
+    updateMarkerZIndex();
+
+    // Fly to the destination
+    const targetCenter: [number, number] = [destination.coordinate.lng, destination.coordinate.lat];
+    map.current.stop();
+    map.current.flyTo({
+      center: targetCenter,
+      zoom: 15,
+      duration: 1500,
+      essential: true,
+    });
+
+    // Open popup after animation completes
+    if (popupTimeoutRef.current) {
+      clearTimeout(popupTimeoutRef.current);
+    }
+    popupTimeoutRef.current = setTimeout(() => {
+      marker.togglePopup();
+      popupTimeoutRef.current = null;
+    }, 1500);
+
     return () => {
-      // Clear all timeouts
       if (popupTimeoutRef.current) {
         clearTimeout(popupTimeoutRef.current);
         popupTimeoutRef.current = null;
       }
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-        animationTimeoutRef.current = null;
-      }
-      // Stop any ongoing animations
-      if (map.current) {
-        map.current.stop();
-      }
-      // Reset animation flag
-      animationInProgressRef.current = false;
-      clickHandlersRef.current.forEach(({ element, handler }) => {
-        element.removeEventListener('click', handler);
-      });
-      clickHandlersRef.current = [];
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
     };
-  }, [activeDestinationId, isMapLoaded, onMarkerClick]);
+  }, [selectedDestinationId, destinations, isMapLoaded, updateMarkerZIndex]);
+
+  /**
+   * useEffect 4: Display search marker when searched location is set
+   * This runs when searchedLocation changes and displays/removes the search marker
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // Remove previous search marker if exists
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+      searchMarkerRef.current = null;
+    }
+
+    // If no searched location, just remove marker and return
+    if (!searchedLocation) {
+      return;
+    }
+
+    // Create red marker for searched location
+    const searchMarkerEl = document.createElement('div');
+    searchMarkerEl.style.cssText = `
+      width: 30px;
+      height: 30px;
+      background-color: #FF4444;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+    `;
+    const searchMarker = new mapboxgl.Marker({
+      element: searchMarkerEl,
+      anchor: 'center',
+    })
+      .setLngLat(searchedLocation.center)
+      .setPopup(
+        new mapboxgl.Popup({
+          offset: 15,
+          closeButton: true,
+          closeOnClick: false,
+        }).setHTML(
+          `<div style="padding: 8px;">
+            <strong style="font-size: 14px;">${searchedLocation.placeName}</strong>
+          </div>`,
+        ),
+      )
+      .addTo(map.current as any);
+    searchMarkerRef.current = searchMarker as any;
+
+    return () => {
+      if (searchMarkerRef.current) {
+        searchMarkerRef.current.remove();
+        searchMarkerRef.current = null;
+      }
+    };
+  }, [searchedLocation, isMapLoaded]);
+
+  /**
+   * useEffect 5: Calculate and display routes based on searched location and selected destination
+   * This runs when searchedLocation or selectedDestinationId changes
+   * It calculates routes and displays them without removing destination markers
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // If no searched location, clear routes
+    if (!searchedLocation) {
+      // Remove all route layers
+      for (let i = 0; i < 3; i++) {
+        if (map.current.getLayer(`route-${i}`)) {
+          map.current.removeLayer(`route-${i}`);
+        }
+        if (map.current.getSource(`route-${i}`)) {
+          map.current.removeSource(`route-${i}`);
+        }
+      }
+      if (map.current.getSource('route')) {
+        map.current.removeLayer('route');
+        map.current.removeSource('route');
+      }
+      if (directionsControlRef.current) {
+        directionsControlRef.current.hideDirections();
+        updateMarkerZIndex(false);
+      }
+      setRouteData(null);
+      setRouteDirections([]);
+      setRouteOrigin(null);
+      setRouteDestination(null);
+      return;
+    }
+
+    // Determine route endpoints
+    // Searched location is always the DESTINATION
+    // Starting point is either selected destination or current location
+    let from: [number, number] | null = null;
+    let to: [number, number] | null = null;
+
+    if (selectedDestinationId) {
+      // Route from selected destination to searched location
+      const destination = destinations.find(d => d.id === selectedDestinationId);
+      if (destination?.coordinate) {
+        from = [destination.coordinate.lng, destination.coordinate.lat];
+        to = searchedLocation.center;
+      }
+    } else {
+      // No selected destination - use current location as starting point
+      getCurrentLocation().then((currentLocation) => {
+        if (currentLocation && map.current) {
+          from = currentLocation;
+          to = searchedLocation.center;
+          calculateAndDisplayRoute(from, to);
+        } else {
+          // Could not get current location - clear route data
+          setRouteData(null);
+          setRouteDirections([]);
+          setRouteOrigin(null);
+          setRouteDestination(null);
+          if (directionsControlRef.current) {
+            directionsControlRef.current.hideDirections();
+            updateMarkerZIndex(false);
+          }
+        }
+      });
+      return;
+    }
+
+    // Calculate and display route if we have both endpoints
+    if (from && to) {
+      calculateAndDisplayRoute(from, to);
+    }
+  }, [searchedLocation, selectedDestinationId, destinations, isMapLoaded, calculateAndDisplayRoute, getCurrentLocation, updateMarkerZIndex]);
 
   // Check if we have any destinations with coordinates
   const hasCoordinates = destinations.some(dest => dest.coordinate !== null);
