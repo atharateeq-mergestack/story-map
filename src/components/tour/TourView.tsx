@@ -111,7 +111,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    */
   useEffect(() => {
     if (!activeDate && dates.length > 0) {
-      destinationController.setActiveDate(dates[0]);
+      destinationController.setActiveDate(dates[0] ?? null);
     }
   }, [activeDate, dates]);
 

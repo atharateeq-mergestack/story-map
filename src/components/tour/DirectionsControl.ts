@@ -18,6 +18,8 @@ export type RouteData = {
   }>;
 };
 
+type ControlPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+
 /**
  * Custom Mapbox Control for Directions
  *
@@ -70,7 +72,7 @@ export class DirectionsControl implements mapboxgl.IControl {
     this.container.parentNode?.removeChild(this.container);
   }
 
-  getDefaultPosition(): string {
+  getDefaultPosition(): ControlPosition {
     return 'top-right';
   }
 
