@@ -1,7 +1,5 @@
 'use client';
 
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ImageCarousel } from './ImageCarousel';
 
 type Destination = {
@@ -18,12 +16,11 @@ type Destination = {
 
 type DestinationDetailPanelProps = {
   destination: Destination;
-  onClose: () => void;
   isBlurred?: boolean;
   isTop?: boolean;
 };
 
-export function DestinationDetailPanel({ destination, onClose, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
+export function DestinationDetailPanel({ destination, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
   return (
     <div
       className={`bg-background rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
@@ -58,18 +55,6 @@ export function DestinationDetailPanel({ destination, onClose, isBlurred = false
         {destination.description && (
           <p className="text-sm text-foreground/80 leading-relaxed">{destination.description}</p>
         )}
-
-        <div className="flex justify-center items-center">
-          {/* Close */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="gap-2 bg-transparent rounded-full"
-          >
-            <X size={16} />
-          </Button>
-        </div>
       </div>
     </div>
   );

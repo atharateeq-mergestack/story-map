@@ -71,7 +71,7 @@ export function ImageCarousel({ images, title }: ImageCarouselProps) {
         )}
       </div>
 
-      {images.length > 1 && (
+      {/* {images.length > 1 && (
         <div className="flex gap-2">
           {images.map((image, index) => (
             <button
@@ -89,7 +89,7 @@ export function ImageCarousel({ images, title }: ImageCarouselProps) {
             </button>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

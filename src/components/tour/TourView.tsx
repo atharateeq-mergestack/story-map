@@ -1,5 +1,6 @@
 'use client';
 
+import { X } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   // Use refs to track previous values and prevent unnecessary re-renders
   const prevTopDestinationIdRef = useRef<string | null>(null);
   const scrollHandlerRef = useRef<(() => void) | null>(null);
+  const prevScrollYRef = useRef<number>(0);
+  const isAutoScrollingRef = useRef<boolean>(false);
+  const autoScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Refs for DOM elements:
   // - heroRef: Hero section at the top
@@ -113,6 +117,8 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     if (!activeDate && dates.length > 0) {
       destinationController.setActiveDate(dates[0] ?? null);
     }
+    // Initialize scroll position ref
+    prevScrollYRef.current = window.scrollY;
   }, [activeDate, dates]);
 
   /**
@@ -253,12 +259,31 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * 3. Uses a threshold of 100px from top to determine the active section
    * 4. If a destination is selected and user scrolls to a different date,
    *    it clears the selectedDestination to exit detail view
+   * 5. When scrolling down and detail view is cleared, automatically scrolls to the new active date
    *
    * This allows users to scroll between dates even when in detail view.
    * When they scroll to a different date, the detail view is automatically cleared.
    */
   useEffect(() => {
     const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const isScrollingDown = currentScrollY > prevScrollYRef.current;
+      const scrollDelta = Math.abs(currentScrollY - prevScrollYRef.current);
+      prevScrollYRef.current = currentScrollY;
+
+      // If user is actively scrolling (significant movement), reset auto-scroll flag
+      // This allows date updates to continue even if auto-scroll timeout hasn't completed
+      if (scrollDelta > 10 && isAutoScrollingRef.current) {
+        isAutoScrollingRef.current = false;
+        if (autoScrollTimeoutRef.current) {
+          clearTimeout(autoScrollTimeoutRef.current);
+          autoScrollTimeoutRef.current = null;
+        }
+      }
+
+      // Skip auto-scroll logic if we're in the middle of an auto-scroll, but still update dates
+      const isAutoScrolling = isAutoScrollingRef.current;
+
       let currentActiveIndex = 0;
       // Find which day section is currently at the top of the viewport
       for (let i = 0; i < dates.length; i++) {
@@ -278,13 +303,49 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
       // If a destination is selected and user has scrolled to a different date,
       // clear the selected destination to exit detail view
-      if (selectedDestination && newActiveDate && selectedDestination.date !== newActiveDate) {
+      // Only do this if not auto-scrolling (to prevent interference)
+      if (!isAutoScrolling && selectedDestination && newActiveDate && selectedDestination.date !== newActiveDate) {
         destinationController.clearSelectedDestination();
         setTopDestinationId(null);
         prevTopDestinationIdRef.current = null;
+
+        // If scrolling down, auto-scroll to the NEXT date (not the date at scroll position)
+        if (isScrollingDown) {
+          // Find the index of the selected destination's date
+          const selectedDateIndex = dates.findIndex(d => d === selectedDestination.date);
+          // Get the next date if it exists
+          const nextDateIndex = selectedDateIndex + 1;
+          const nextDate = dates[nextDateIndex] || null;
+
+          // Only scroll to next date if it exists and is different from current
+          if (nextDate && nextDate !== selectedDestination.date) {
+            const nextDateSection = daySectionRefs.current[nextDate];
+            if (nextDateSection) {
+              // Clear any existing timeout
+              if (autoScrollTimeoutRef.current) {
+                clearTimeout(autoScrollTimeoutRef.current);
+              }
+              isAutoScrollingRef.current = true;
+              const navHeight = navRef.current?.offsetHeight || 0;
+              const elementPosition = nextDateSection.getBoundingClientRect().top + window.scrollY;
+              window.scrollTo({
+                top: elementPosition - navHeight - 20,
+                behavior: 'smooth',
+              });
+              // Update activeDate to the next date
+              destinationController.setActiveDate(nextDate);
+              // Reset auto-scroll flag after animation completes
+              autoScrollTimeoutRef.current = setTimeout(() => {
+                isAutoScrollingRef.current = false;
+              }, 500);
+              // Don't return early - let date updates continue normally
+            }
+          }
+        }
       }
 
-      // Only update state if the date has actually changed (prevents unnecessary re-renders)
+      // Always update state if the date has actually changed (prevents unnecessary re-renders)
+      // This ensures dates continue to update even after auto-scroll
       if (activeDate !== newActiveDate) {
         destinationController.setActiveDate(newActiveDate);
       }
@@ -296,7 +357,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     handleScroll();
 
     // Cleanup: Remove scroll listener when component unmounts or dependencies change
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (autoScrollTimeoutRef.current) {
+        clearTimeout(autoScrollTimeoutRef.current);
+      }
+    };
   }, [dates, selectedDestination]);
 
   /**
@@ -536,6 +602,11 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         {dates.map((date, dayIndex) => {
           const dayDestinations = destinationsByDate[date] || [];
           const dayNumber = dayIndex + 1;
+          // View Mode Logic:
+          // - isDaySelected: true if this day matches the selectedDestination's date
+          //   When true, this day is in "detail mode" - all destinations show as detail panels
+          //   When false, this day is in "overview mode" - destinations show as cards
+          const isDaySelected = selectedDestination?.date === date;
 
           return (
             <section
@@ -565,7 +636,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
               <div className="flex flex-col lg:flex-row">
                 {/* Left Panel: Destinations / Detail Panel */}
-                <div className="w-full lg:w-[30%] order-2 lg:order-1 space-y-3 sm:space-y-4">
+                <div className="relative w-full lg:w-[30%] order-2 lg:order-1 space-y-3 sm:space-y-4">
                   {dayDestinations.length === 0
                     ? (
                         <Card>
@@ -578,12 +649,6 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                       )
                     : (
                         dayDestinations.map((destination) => {
-                          // View Mode Logic:
-                          // - isDaySelected: true if this day matches the selectedDestination's date
-                          //   When true, this day is in "detail mode" - all destinations show as detail panels
-                          //   When false, this day is in "overview mode" - destinations show as cards
-                          const isDaySelected = selectedDestination?.date === date;
-
                           // isTop: true if this destination's panel is currently at the top of viewport
                           // Used to highlight the active panel and sync with map
                           const isTop = topDestinationId === destination.id;
@@ -643,7 +708,6 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                                     >
                                       <DestinationDetailPanel
                                         destination={destination}
-                                        onClose={handleBackToOverview}
                                         isBlurred={shouldBlur}
                                         isTop={isTop}
                                       />
@@ -663,6 +727,20 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                           );
                         })
                       )}
+
+                  {/* Floating Close Button - Only visible in detail mode */}
+                  {isDaySelected && (
+                    <div className="sticky bottom-4 z-50 flex justify-center mt-4">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={handleBackToOverview}
+                        className="gap-2 rounded-full shadow-lg"
+                      >
+                        <X size={20} />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right Panel: Map */}
