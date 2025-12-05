@@ -503,6 +503,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    *    (This ensures clicking a date always shows the card view, not detail panels)
    */
   const handleDateClick = (date: string) => {
+    isProgrammaticSelectionRef.current = true;
     const section = daySectionRefs.current[date];
     if (section) {
       const navHeight = navRef.current?.offsetHeight || 0;
@@ -516,6 +517,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       destinationController.clearSelectedDestination();
       setTopDestinationId(null);
     }
+    setTimeout(() => {
+      isProgrammaticSelectionRef.current = false;
+    }, 600);
   };
 
   if (!mapboxToken) {

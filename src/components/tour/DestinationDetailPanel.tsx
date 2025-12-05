@@ -29,7 +29,7 @@ export function DestinationDetailPanel({ destination, isBlurred = false, isTop =
     >
       {/* Media / Carousel */}
       <div className="w-full h-64 sm:h-80 bg-gray-100">
-        <ImageCarousel images={destination.images || []} title={destination.name} />
+        <ImageCarousel images={destination.images && destination.images?.length > 0 ? destination.images : ['/placeholder.svg']} title={destination.name} />
       </div>
 
       {/* Content */}

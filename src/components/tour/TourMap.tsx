@@ -498,10 +498,10 @@ export function TourMap({
         className: 'mapboxgl-popup destination-popup',
         maxWidth: '300px',
       }).setHTML(
-        `<div style="padding: 0; max-width: 300px;">
+        `<div style="padding: 0; width: 300px;">
           ${destination.images && destination.images.length > 0
             ? `
-            <div style="width: 100%; height: 100px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
+            <div style="width: 92%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
               <img 
                 src="${destination.images[0]}" 
                 alt="${destination.name}"
@@ -510,7 +510,14 @@ export function TourMap({
               />
             </div>
           `
-            : ''}
+            : ` <div style="width: 92%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
+              <img 
+                src="${'/placeholder.svg'}" 
+                alt="${destination.name}"
+                style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                onerror="this.style.display='none'"
+              />
+            </div>`}
           <div style="padding: 0 12px 12px 12px;">
             <strong style="font-size: 16px; display: block; margin-bottom: 8px;">${destination.name}</strong>
             ${destination.timeSlot ? `<div style="font-size: 13px; color: #666; margin-bottom: 8px;"><small>${destination.timeSlot.start_time} - ${destination.timeSlot.end_time}</small></div>` : ''}
