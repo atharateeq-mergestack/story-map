@@ -630,7 +630,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           className="sticky top-[-8px] z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
         >
           <div className="container mx-auto px-3 sm:px-4">
-            <div className="flex h-12 sm:h-14 md:h-16 items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
+            <div className="flex h-12 sm:h-14 md:h-16 items-center gap-1.5 sm:gap-2 overflow-x-auto pt-2">
               {dates.map(date => (
                 <Button
                   key={date}

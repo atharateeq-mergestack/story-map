@@ -501,7 +501,7 @@ export function TourMap({
         `<div style="padding: 0; max-width: 300px;">
           ${destination.images && destination.images.length > 0
             ? `
-            <div style="width: 100%; height: 200px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
+            <div style="width: 100%; height: 100px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
               <img 
                 src="${destination.images[0]}" 
                 alt="${destination.name}"
