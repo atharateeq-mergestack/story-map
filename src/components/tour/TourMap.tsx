@@ -467,6 +467,7 @@ export function TourMap({
       // Create marker element
       const el = document.createElement('div');
       el.className = 'destination-marker';
+      el.setAttribute('data-destination-id', destination.id);
       el.style.width = '40px';
       el.style.height = '60px';
       el.style.backgroundImage = 'url(/marker-pin.svg)';
@@ -483,7 +484,7 @@ export function TourMap({
       const marker = new mapboxgl.Marker({
         element: el,
         anchor: 'bottom',
-        offset: [0, 0],
+        offset: [0, 3],
         draggable: false,
       })
         .setLngLat([destination.coordinate.lng, destination.coordinate.lat]);
@@ -563,9 +564,11 @@ export function TourMap({
       // Add click handler
       const clickHandler = () => {
         if (onMarkerClick) {
-          onMarkerClick(destination.id);
+          const destinationId = el.getAttribute('data-destination-id');
+          if (destinationId) {
+            onMarkerClick(destinationId);
+          }
         }
-        marker.togglePopup();
       };
       // Event listener is cleaned up in useEffect cleanup via clickHandlersRef
       el.addEventListener('click', clickHandler);

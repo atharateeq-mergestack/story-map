@@ -87,6 +87,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   const prevScrollYRef = useRef<number>(0);
   const isAutoScrollingRef = useRef<boolean>(false);
   const autoScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProgrammaticSelectionRef = useRef<boolean>(false);
+  const lastScrollTimeRef = useRef<number>(0);
+  const lastScrollYRef = useRef<number>(0);
 
   // Refs for DOM elements:
   // - heroRef: Hero section at the top
@@ -183,6 +186,27 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     prevTopDestinationIdRef.current = null;
 
     const handleScroll = () => {
+      // Skip updates if destination was set programmatically (not by user scroll)
+      if (isProgrammaticSelectionRef.current) {
+        return;
+      }
+
+      // Detect fast scrolling and skip updates if scrolling too fast
+      const currentTime = Date.now();
+      const currentScrollY = window.scrollY;
+      const timeDelta = currentTime - lastScrollTimeRef.current;
+      const scrollDelta = Math.abs(currentScrollY - lastScrollYRef.current);
+
+      // Update scroll tracking refs
+      lastScrollTimeRef.current = currentTime;
+      lastScrollYRef.current = currentScrollY;
+
+      // If scrolling very fast (more than 200px in less than 100ms), skip destination updates
+      // This prevents updating destination ID when rapidly scrolling from first to last
+      if (timeDelta > 0 && timeDelta < 100 && scrollDelta > 200) {
+        return;
+      }
+
       // Check if we're still on the same date section
       // If not, the date navigation handler will clear selectedDestination
       const selectedDateSection = daySectionRefs.current[selectedDestination.date];
@@ -232,6 +256,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
     // Store handler reference for cleanup
     scrollHandlerRef.current = handleScroll;
+
+    // Initialize scroll tracking refs
+    lastScrollTimeRef.current = Date.now();
+    lastScrollYRef.current = window.scrollY;
 
     // Attach scroll listener with passive flag for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -380,6 +408,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
    * Note: Only updates selectedDestination if it's actually different to prevent unnecessary re-renders
    */
   const handleDestinationClick = (destination: Destination) => {
+    // Set flag to prevent scroll handler from updating selection
+    isProgrammaticSelectionRef.current = true;
+
     destinationController.setSelectedDestination(destination.id);
     destinationController.setActiveDate(destination.date);
     setTopDestinationId(destination.id);
@@ -395,6 +426,13 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           top: elementPosition - navHeight - 20,
           behavior: 'smooth',
         });
+        // Clear flag after scroll animation completes (smooth scroll takes ~500ms)
+        setTimeout(() => {
+          isProgrammaticSelectionRef.current = false;
+        }, 600);
+      } else {
+        // If panel not found, clear flag immediately
+        isProgrammaticSelectionRef.current = false;
       }
     }, 100);
   };
@@ -412,6 +450,10 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     if (!destination) {
       return;
     }
+
+    // Set flag to prevent scroll handler from updating selection
+    isProgrammaticSelectionRef.current = true;
+
     destinationController.setSelectedDestination(destination.id);
     destinationController.setActiveDate(destination.date);
     setTopDestinationId(destination.id);
@@ -427,6 +469,13 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           top: elementPosition - navHeight - 20,
           behavior: 'smooth',
         });
+        // Clear flag after scroll animation completes (smooth scroll takes ~500ms)
+        setTimeout(() => {
+          isProgrammaticSelectionRef.current = false;
+        }, 600);
+      } else {
+        // If panel not found, clear flag immediately
+        isProgrammaticSelectionRef.current = false;
       }
     }, 100);
   };
