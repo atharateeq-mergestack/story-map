@@ -2,7 +2,7 @@
 
 import { X } from 'lucide-react';
 import moment from 'moment';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heading } from '@/components/ui/common/Heading';
@@ -122,7 +122,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
     }
     // Initialize scroll position ref
     prevScrollYRef.current = window.scrollY;
-  }, [activeDate, dates]);
+  }, []);
 
   /**
    * useEffect: Reset selectedDestinationId when activeDate changes
@@ -276,31 +276,86 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   }, [selectedDestination, destinationsByDate]);
 
   /**
-   * Scroll Handler for Date Navigation
+   * Helper function to check if all destinations of a day have scrolled past the viewport
+   *
+   * This function checks whether any destination (card or panel) for a given day
+   * is still visible in the viewport. If any destination is still visible,
+   * the day is considered "active" and activeDate updates should be blocked.
+   *
+   * @param date - The date string to check
+   * @param isDetailMode - Whether we're in detail mode (panels) or overview mode (cards)
+   * @returns true if all destinations have scrolled past, false if any are still visible
+   */
+  const areAllDestinationsScrolledPast = useCallback((date: string, isDetailMode: boolean): boolean => {
+    const dayDestinations = destinationsByDate[date] || [];
+    if (dayDestinations.length === 0) {
+      // If no destinations, consider the day as "scrolled past" if the day section itself is past
+      const daySection = daySectionRefs.current[date];
+      if (!daySection) {
+        return true;
+      }
+      const sectionRect = daySection.getBoundingClientRect();
+      return sectionRect.bottom < 0;
+    }
+
+    // Check if any destination is still visible in the viewport
+    // In detail mode, check detailPanelRefs; in overview mode, check destinationRefs
+    const refsToCheck = isDetailMode ? detailPanelRefs.current : destinationRefs.current;
+
+    for (const dest of dayDestinations) {
+      const element = refsToCheck[dest.id];
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        // If any destination is still visible (bottom is below viewport top),
+        // the day hasn't scrolled past yet
+        if (rect.bottom > 0) {
+          return false;
+        }
+      }
+    }
+
+    // All destinations have scrolled past
+    return true;
+  }, [destinationsByDate]);
+
+  /**
+   * Scroll Handler for Date Navigation with Smart Destination Blocking
    *
    * This effect handles scroll-based date navigation in the sticky nav bar.
-   * It ALWAYS runs, regardless of whether a destination is selected.
+   * It implements smart blocking: activeDate only updates when all destinations
+   * of the current day have scrolled past the viewport.
    *
-   * How it works:
+   * Key Behavior:
    * 1. As user scrolls, checks which day section is closest to the top of viewport
-   * 2. Updates activeDate to highlight the corresponding date button in the nav bar
-   * 3. Uses a threshold of 100px from top to determine the active section
-   * 4. If a destination is selected and user scrolls to a different date,
-   *    it clears the selectedDestination to exit detail view
-   * 5. When scrolling down and detail view is cleared, automatically scrolls to the new active date
+   * 2. BEFORE updating activeDate, checks if we're still scrolling through destinations
+   *    of the current active day
+   * 3. If any destination of the current day is still visible, BLOCKS activeDate update
+   *    - This prevents date changes while scrolling through destinations within a day
+   * 4. Only after ALL destinations of a day have scrolled past, activeDate updates
+   *    to the next day automatically
+   * 5. Uses a threshold of 100px from top to determine which day section is at the top
    *
-   * This allows users to scroll between dates even when in detail view.
-   * When they scroll to a different date, the detail view is automatically cleared.
+   * Scroll Blocking Logic:
+   * - When scrolling through destinations within a day, activeDate stays locked to that day
+   * - This creates a smooth experience where users can scroll through all destinations
+   *   of a day without the date navigation jumping around
+   * - Once all destinations scroll past, the next day section becomes active
+   *
+   * This works in both overview mode (cards) and detail mode (panels).
    */
   useEffect(() => {
     const handleScroll = () => {
+      // Skip updates if destination was set programmatically (not by user scroll)
+      if (isProgrammaticSelectionRef.current) {
+        return;
+      }
+
       const currentScrollY = window.scrollY;
       const isScrollingDown = currentScrollY > prevScrollYRef.current;
       const scrollDelta = Math.abs(currentScrollY - prevScrollYRef.current);
       prevScrollYRef.current = currentScrollY;
 
       // If user is actively scrolling (significant movement), reset auto-scroll flag
-      // This allows date updates to continue even if auto-scroll timeout hasn't completed
       if (scrollDelta > 10 && isAutoScrollingRef.current) {
         isAutoScrollingRef.current = false;
         if (autoScrollTimeoutRef.current) {
@@ -309,73 +364,52 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         }
       }
 
-      // Skip auto-scroll logic if we're in the middle of an auto-scroll, but still update dates
       const isAutoScrolling = isAutoScrollingRef.current;
 
-      let currentActiveIndex = 0;
       // Find which day section is currently at the top of the viewport
+      let currentActiveIndex = 0;
       for (let i = 0; i < dates.length; i++) {
         const key = dates[i] as keyof typeof daySectionRefs.current;
         const section = daySectionRefs.current[key];
         if (section) {
           const rect = section.getBoundingClientRect();
           // If section's top is within 100px of viewport top, it's the active section
-          // We keep updating currentActiveIndex as we find sections that meet this criteria
-          // The last one found (closest to top) will be the active one
           if (rect.top <= 100) {
             currentActiveIndex = i;
           }
         }
       }
-      const newActiveDate = dates[currentActiveIndex] || null;
+      const candidateActiveDate = dates[currentActiveIndex] || null;
 
-      // If a destination is selected and user has scrolled to a different date,
-      // clear the selected destination to exit detail view
-      // Only do this if not auto-scrolling (to prevent interference)
-      if (!isAutoScrolling && selectedDestination && newActiveDate && selectedDestination.date !== newActiveDate) {
-        destinationController.clearSelectedDestination();
-        setTopDestinationId(null);
-        prevTopDestinationIdRef.current = null;
+      // SCROLL BLOCKING LOGIC:
+      // When scrolling DOWN through destinations, block activeDate updates until all
+      // destinations of the current day have scrolled past.
+      // When scrolling UP, allow activeDate to update to previous days immediately.
+      if (activeDate && isScrollingDown) {
+        const isDetailMode = selectedDestination?.date === activeDate;
+        const allDestinationsPast = areAllDestinationsScrolledPast(activeDate, isDetailMode);
 
-        // If scrolling down, auto-scroll to the NEXT date (not the date at scroll position)
-        if (isScrollingDown) {
-          // Find the index of the selected destination's date
-          const selectedDateIndex = dates.findIndex(d => d === selectedDestination.date);
-          // Get the next date if it exists
-          const nextDateIndex = selectedDateIndex + 1;
-          const nextDate = dates[nextDateIndex] || null;
-
-          // Only scroll to next date if it exists and is different from current
-          if (nextDate && nextDate !== selectedDestination.date) {
-            const nextDateSection = daySectionRefs.current[nextDate];
-            if (nextDateSection) {
-              // Clear any existing timeout
-              if (autoScrollTimeoutRef.current) {
-                clearTimeout(autoScrollTimeoutRef.current);
-              }
-              isAutoScrollingRef.current = true;
-              const navHeight = navRef.current?.offsetHeight || 0;
-              const elementPosition = nextDateSection.getBoundingClientRect().top + window.scrollY;
-              window.scrollTo({
-                top: elementPosition - navHeight - 20,
-                behavior: 'smooth',
-              });
-              // Update activeDate to the next date
-              destinationController.setActiveDate(nextDate);
-              // Reset auto-scroll flag after animation completes
-              autoScrollTimeoutRef.current = setTimeout(() => {
-                isAutoScrollingRef.current = false;
-              }, 500);
-              // Don't return early - let date updates continue normally
-            }
-          }
+        // If we're still scrolling through destinations of the current day, block date updates
+        // This only applies when scrolling down - when scrolling up, we allow immediate updates
+        if (!allDestinationsPast) {
+          // Don't update activeDate - we're still in the middle of scrolling through destinations
+          return;
         }
       }
 
-      // Always update state if the date has actually changed (prevents unnecessary re-renders)
-      // This ensures dates continue to update even after auto-scroll
-      if (activeDate !== newActiveDate) {
-        destinationController.setActiveDate(newActiveDate);
+      // All destinations of the current day have scrolled past, safe to update activeDate
+      // But only if the candidate date is different from current activeDate
+      if (candidateActiveDate && activeDate !== candidateActiveDate) {
+        // If a destination is selected and we're moving to a different date,
+        // clear the selected destination to exit detail view
+        if (!isAutoScrolling && selectedDestination && selectedDestination.date !== candidateActiveDate) {
+          destinationController.clearSelectedDestination();
+          setTopDestinationId(null);
+          prevTopDestinationIdRef.current = null;
+        }
+
+        // Update activeDate to the new candidate date
+        destinationController.setActiveDate(candidateActiveDate);
       }
     };
 
@@ -391,7 +425,7 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
         clearTimeout(autoScrollTimeoutRef.current);
       }
     };
-  }, [dates, selectedDestination]);
+  }, [activeDate]);
 
   /**
    * Handles clicking on a destination card
