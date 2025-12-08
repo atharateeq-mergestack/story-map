@@ -12,6 +12,7 @@ import { Env } from '@/libs/Env';
 import destinationController from '@/store/destinationController';
 import { DestinationCard } from './DestinationCard';
 import { DestinationDetailPanel } from './DestinationDetailPanel';
+import { TourHero } from './TourHero';
 import { TourMap } from './TourMap';
 
 type Destination = {
@@ -583,85 +584,12 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section
+      <TourHero
         ref={heroRef}
-        className="relative min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] flex flex-col justify-end bg-muted/30"
-      >
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 pb-6 sm:pb-8 pt-16 sm:pt-20 md:pt-24">
-          <div className="max-w-3xl space-y-4 sm:space-y-6">
-            <Heading
-              level={1}
-              size="5xl"
-              weight="bold"
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-foreground"
-            >
-              {tour.name}
-            </Heading>
-
-            {tour.description && (
-              <Text size="lg" color="muted" className="text-sm sm:text-base md:text-lg max-w-2xl">
-                {tour.description}
-              </Text>
-            )}
-
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-              {tour.startLocation && tour.endLocation && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Text weight="medium" className="text-xs sm:text-sm">
-                    Going from
-                  </Text>
-                  <Text color="muted" className="text-xs sm:text-sm">
-                    {tour.startLocation}
-                  </Text>
-                  <Text color="muted" className="text-xs sm:text-sm">
-                    →
-                  </Text>
-                  <Text weight="medium" className="text-xs sm:text-sm">
-                    Going to
-                  </Text>
-                  <Text color="muted" className="text-xs sm:text-sm">
-                    {tour.endLocation}
-                  </Text>
-                </div>
-              )}
-
-              {tour.startDate && tour.endDate && (
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                  <div>
-                    <Text size="sm" color="muted" className="text-xs">
-                      Start Date
-                    </Text>
-                    <Text weight="medium" className="text-xs sm:text-sm">
-                      {formatDate(tour.startDate)}
-                    </Text>
-                  </div>
-                  <div>
-                    <Text size="sm" color="muted" className="text-xs">
-                      End Date
-                    </Text>
-                    <Text weight="medium" className="text-xs sm:text-sm">
-                      {formatDate(tour.endDate)}
-                    </Text>
-                  </div>
-                  {totalDays > 0 && (
-                    <div>
-                      <Text size="sm" color="muted" className="text-xs">
-                        Total Days
-                      </Text>
-                      <Text weight="medium" className="text-xs sm:text-sm">
-                        {totalDays}
-                        {' '}
-                        {totalDays === 1 ? 'Day' : 'Days'}
-                      </Text>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-      </section>
+        tour={tour}
+        totalDays={totalDays}
+        backgroundImageUrl="/worldwide-tour.jpg"
+      />
       {dates.length > 0 && (
         <nav
           ref={navRef}
