@@ -7,6 +7,43 @@ type RefObject<T> = {
 };
 
 /**
+ * Calculate padding for fitBounds that accounts for the right-side directions card
+ * The card occupies approximately 25% of the map width, so we add extra padding on the right
+ * to ensure routes fit within the visible 75% area
+ */
+function calculateRoutePadding(map: mapboxgl.Map, basePadding: number = 50): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  try {
+    const mapContainer = map.getContainer();
+    if (!mapContainer) {
+      return { top: basePadding, right: basePadding, bottom: basePadding, left: basePadding };
+    }
+
+    const mapRect = mapContainer.getBoundingClientRect();
+    const mapWidth = mapRect.width;
+
+    // Calculate right padding: 25% of map width + base padding
+    // This ensures routes fit within the visible 75% area (excluding the card)
+    const rightCardWidth = mapWidth * 0.25;
+    const rightPadding = rightCardWidth + basePadding;
+
+    return {
+      top: basePadding,
+      right: rightPadding,
+      bottom: basePadding,
+      left: basePadding,
+    };
+  } catch (error) {
+    console.warn('Failed to calculate route padding, using default:', error);
+    return { top: basePadding, right: basePadding, bottom: basePadding, left: basePadding };
+  }
+}
+
+/**
  * Clear all route layers and sources from the map
  */
 export function clearRouteLayers(map: mapboxgl.Map): void {
@@ -72,6 +109,8 @@ export function clearAllRoutes(
 
 /**
  * Add all routes to the map with proper styling
+ * Uses consistent layer IDs: route-0, route-1, route-2, etc.
+ * Selected route is moved to the top to ensure it renders above others
  */
 export function addRoutesToMap(
   map: mapboxgl.Map,
@@ -82,7 +121,7 @@ export function addRoutesToMap(
   // Remove existing route layers first
   clearRouteLayers(map);
 
-  // Add all routes as separate layers
+  // Add all routes as separate layers with consistent IDs
   routes.forEach((route, index) => {
     const isSelected = index === selectedIndex;
     map.addSource(`route-${index}`, {
@@ -110,6 +149,18 @@ export function addRoutesToMap(
     });
   });
 
+  // Move selected route to the top so it renders above all other routes
+  // This ensures the selected route is always visible even when routes overlap exactly
+  if (routes.length > 1 && map.getLayer(`route-${selectedIndex}`)) {
+    try {
+      // Move selected route to the end (top) of all route layers
+      // This ensures it renders on top of all other routes
+      map.moveLayer(`route-${selectedIndex}`);
+    } catch (error) {
+      console.warn('Failed to move selected route layer to top:', error);
+    }
+  }
+
   // Fit map to show all routes
   const allBounds = routes.reduce((bounds, route) => {
     route.geometry.coordinates.forEach((coord) => {
@@ -118,8 +169,11 @@ export function addRoutesToMap(
     return bounds;
   }, new mapboxgl.LngLatBounds(from, from));
 
+  // Calculate padding that accounts for the right-side directions card (25% width)
+  const padding = calculateRoutePadding(map, 50);
+
   map.fitBounds(allBounds as unknown as mapboxgl.LngLatBounds, {
-    padding: 50,
+    padding,
     maxZoom: 15,
     duration: 500,
   });
@@ -127,6 +181,7 @@ export function addRoutesToMap(
 
 /**
  * Update selected route styling on the map
+ * Moves selected route to the top and updates visual styling
  */
 export function updateRouteStyling(
   map: mapboxgl.Map,
@@ -139,10 +194,22 @@ export function updateRouteStyling(
     const isSelected = index === selectedIndex;
     if (map.getLayer(`route-${index}`)) {
       map.setPaintProperty(`route-${index}`, 'line-color', isSelected ? '#0074D9' : '#989a9c');
-      map.setPaintProperty(`route-${index}`, 'line-width', 6);
+      map.setPaintProperty(`route-${index}`, 'line-width', isSelected ? 8 : 6);
       map.setPaintProperty(`route-${index}`, 'line-opacity', isSelected ? 1 : 0.7);
     }
   });
+
+  // Move selected route to the top so it renders above all other routes
+  // This ensures the selected route is always visible even when routes overlap exactly
+  if (routes.length > 1 && map.getLayer(`route-${selectedIndex}`)) {
+    try {
+      // Move selected route to the end (top) of all route layers
+      // This ensures it renders on top of all other routes
+      map.moveLayer(`route-${selectedIndex}`);
+    } catch (error) {
+      console.warn('Failed to move selected route layer to top:', error);
+    }
+  }
 
   // Fit map to show selected route
   const selectedRoute = routes[selectedIndex];
@@ -151,8 +218,12 @@ export function updateRouteStyling(
       (bounds, coord) => bounds.extend(coord as [number, number]),
       new mapboxgl.LngLatBounds(from, from),
     );
+
+    // Calculate padding that accounts for the right-side directions card (25% width)
+    const padding = calculateRoutePadding(map, 50);
+
     map.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-      padding: 50,
+      padding,
       maxZoom: 15,
       duration: 500,
     });

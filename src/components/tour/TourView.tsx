@@ -605,9 +605,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
                 {/* Right Panel: Map */}
                 <div className="w-full lg:w-[70%] relative order-1 lg:order-2">
                   <div
-                    className="sticky top-20 sm:top-24"
+                    className="sticky top-15"
                     style={{
-                      height: 'calc(100vh - 8rem)',
+                      height: 'calc(100vh - 4rem)',
                       minHeight: '400px',
                     }}
                   >

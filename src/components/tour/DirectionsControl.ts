@@ -267,7 +267,7 @@ export class DirectionsControl implements mapboxgl.IControl {
                 style="
                   flex: 1;
                   min-width: 80px;
-                  padding: 6px 10px;
+                  padding: 4px 10px;
                   background: ${index === this.selectedRouteIndex ? '#0074D9' : 'white'};
                   color: ${index === this.selectedRouteIndex ? 'white' : '#333'};
                   border: 1px solid ${index === this.selectedRouteIndex ? '#0074D9' : '#ccc'};
