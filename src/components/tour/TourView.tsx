@@ -5,9 +5,8 @@ import moment from 'moment';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heading } from '@/components/ui/common/Heading';
 import { Text } from '@/components/ui/common/Text';
-import { formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { Env } from '@/libs/Env';
 import destinationController from '@/store/destinationController';
 import { DestinationCard } from './DestinationCard';
@@ -466,18 +465,26 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
           className="sticky top-[-8px] z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
         >
           <div className="container mx-auto px-3 sm:px-4">
-            <div className="flex h-12 sm:h-14 md:h-16 items-center gap-1.5 sm:gap-2 overflow-x-auto pt-2">
-              {dates.map(date => (
-                <Button
-                  key={date}
-                  variant={activeDate === date ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleDateClick(date)}
-                  className="whitespace-nowrap text-xs sm:text-sm shrink-0"
-                >
-                  {formatDate(date)}
-                </Button>
-              ))}
+            <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3 overflow-x-auto py-2">
+              {dates.map((date) => {
+                const isActive = activeDate === date;
+                return (
+                  <Button
+                    key={date}
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleDateClick(date)}
+                    className={cn(
+                      'whitespace-nowrap shrink-0 flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 transition-all',
+                      isActive && 'shadow-md',
+                    )}
+                  >
+                    <span className="text-xs sm:text-sm font-medium">
+                      {formatDate(date)}
+                    </span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </nav>
@@ -501,20 +508,27 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
               className="mb-12 sm:mb-16"
             >
               {/* Sticky Day Heading */}
-              <Heading
-                level={2}
-                size="2xl"
-                weight="bold"
-                className="text-xl sm:text-2xl sticky top-0 bg-background z-10 py-2 border-b border-foreground/10"
-              >
-                Day
-                {' '}
-                {dayNumber}
-                {' '}
-                –
-                {' '}
-                {formatDate(date)}
-              </Heading>
+              <div className="sticky top-0 bg-background z-10 border-b border-foreground/10 p-1">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  {/* Day Number Badge */}
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground font-bold text-lg sm:text-xl shrink-0">
+                    {dayNumber}
+                  </div>
+
+                  {/* Date Text */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <span className="text-sm sm:text-base font-medium text-muted-foreground uppercase tracking-wide">
+                      Day
+                      {' '}
+                      {dayNumber}
+                    </span>
+                    <span className="hidden sm:inline text-muted-foreground">•</span>
+                    <span className="text-base sm:text-lg font-semibold text-foreground">
+                      {formatDate(date)}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex flex-col lg:flex-row">
                 {/* Left Panel: Destinations / Detail Panel */}
