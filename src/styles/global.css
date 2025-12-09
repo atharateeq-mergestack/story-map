@@ -483,4 +483,7 @@
   .mapboxgl-ctrl-geocoder--pin-right {
     @apply hidden;
   }
+  .mapboxgl-popup {
+    @apply !z-1;
+  }
 }

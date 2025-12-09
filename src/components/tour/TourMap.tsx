@@ -41,12 +41,11 @@ type TourMapProps = {
 export function TourMap({
   destinations,
   mapboxAccessToken,
-  onMarkerClick,
 }: TourMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const clickHandlersRef = useRef<Array<{ element: HTMLElement; handler: () => void }>>([]);
+  const selectedPopupRef = useRef<mapboxgl.Popup | null>(null);
   const routeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const directionsControlRef = useRef<DirectionsControl | null>(null);
@@ -131,6 +130,29 @@ export function TourMap({
     }
     return `${(meters / 1000).toFixed(2)} km`;
   }, []);
+
+  const buildDestinationPopupHTML = (destination: Destination): string => {
+    const hasImages = destination.images && destination.images.length > 0;
+    const imageSrc = hasImages ? destination.images![0] : '/placeholder.svg';
+
+    return `
+      <div style="padding: 0; width: 300px;">
+        <div style="width: 92%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
+          <img 
+            src="${imageSrc}" 
+            alt="${destination.name}"
+            style="width: 100%; height: 100%; object-fit: cover; display: block;"
+            onerror="this.style.display='none'"
+          />
+        </div>
+        <div style="padding: 0 12px 12px 12px;">
+          <strong style="font-size: 16px; display: block; margin-bottom: 8px;">${destination.name}</strong>
+          ${destination.timeSlot ? `<div style="font-size: 13px; color: #666; margin-bottom: 8px;"><small>${destination.timeSlot.start_time} - ${destination.timeSlot.end_time}</small></div>` : ''}
+          ${destination.description ? `<p style="font-size: 13px; color: #333; line-height: 1.5; margin: 0;">${destination.description}</p>` : ''}
+        </div>
+      </div>
+    `;
+  };
 
   // Helper function to update marker z-index based on directions visibility
   const updateMarkerZIndex = useCallback((directionsVisible?: boolean) => {
@@ -417,11 +439,7 @@ export function TourMap({
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Clean up previous click handlers
-    clickHandlersRef.current.forEach(({ element, handler }) => {
-      element.removeEventListener('click', handler);
-    });
-    clickHandlersRef.current = [];
+    const cleanupHandlers: Array<() => void> = [];
 
     // Helper function to check if two coordinates are the same (with tolerance for floating point)
     const areCoordinatesEqual = (
@@ -487,115 +505,45 @@ export function TourMap({
         offset: [0, 3],
         draggable: false,
       })
-        .setLngLat([destination.coordinate.lng, destination.coordinate.lat]);
+        .setLngLat([destination.coordinate.lng, destination.coordinate.lat])
+        .addTo(map.current as any);
 
-      // Create popup
-      const popup = new mapboxgl.Popup({
-        offset: [0, -50],
-        closeButton: true,
-        closeOnClick: false,
-        anchor: 'bottom',
-        className: 'mapboxgl-popup destination-popup',
-        maxWidth: '300px',
-      }).setHTML(
-        `<div style="padding: 0; width: 300px;">
-          ${destination.images && destination.images.length > 0
-            ? `
-            <div style="width: 92%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
-              <img 
-                src="${destination.images[0]}" 
-                alt="${destination.name}"
-                style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                onerror="this.style.display='none'"
-              />
-            </div>
-          `
-            : ` <div style="width: 92%; height: 120px; overflow: hidden; border-radius: 8px 8px 0 0; margin-bottom: 12px;">
-              <img 
-                src="${'/placeholder.svg'}" 
-                alt="${destination.name}"
-                style="width: 100%; height: 100%; object-fit: cover; display: block;"
-                onerror="this.style.display='none'"
-              />
-            </div>`}
-          <div style="padding: 0 12px 12px 12px;">
-            <strong style="font-size: 16px; display: block; margin-bottom: 8px;">${destination.name}</strong>
-            ${destination.timeSlot ? `<div style="font-size: 13px; color: #666; margin-bottom: 8px;"><small>${destination.timeSlot.start_time} - ${destination.timeSlot.end_time}</small></div>` : ''}
-            ${destination.description ? `<p style="font-size: 13px; color: #333; line-height: 1.5; margin: 0;">${destination.description}</p>` : ''}
-          </div>
-        </div>`,
-      );
-
-      // Attach popup to marker
-      marker.setPopup(popup).addTo(map.current as any);
-
-      // Style the close button after popup is added
-      const styleCloseButton = () => {
-        const closeButton = popup.getElement()?.querySelector('.mapboxgl-popup-close-button') as HTMLElement;
-        if (closeButton) {
-          closeButton.style.cssText = `
-            width: 32px !important;
-            height: 32px !important;
-            font-size: 20px !important;
-            line-height: 32px !important;
-            padding: 0 !important;
-            right: 8px !important;
-            top: 8px !important;
-            background: rgba(255, 255, 255, 0.9) !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            transition: background 0.2s !important;
-            cursor: pointer !important;
-          `;
-          const handleMouseEnter = () => {
-            closeButton.style.background = 'rgba(255, 255, 255, 1)';
-          };
-          const handleMouseLeave = () => {
-            closeButton.style.background = 'rgba(255, 255, 255, 0.9)';
-          };
-          // Event listeners are cleaned up in useEffect cleanup via clickHandlersRef
-          closeButton.addEventListener('mouseenter', handleMouseEnter);
-          closeButton.addEventListener('mouseleave', handleMouseLeave);
-
-          // Store handlers for cleanup (handled in useEffect cleanup)
-          clickHandlersRef.current.push(
-            { element: closeButton, handler: handleMouseEnter },
-            { element: closeButton, handler: handleMouseLeave },
-          );
-        }
-      };
-      popup.on('open', styleCloseButton);
-
-      // Add click handler
+      // Add click handler that simply flies to the destination and shows its popup
       const clickHandler = () => {
-        if (onMarkerClick) {
-          const destinationId = el.getAttribute('data-destination-id');
-          if (destinationId) {
-            onMarkerClick(destinationId);
-          }
+        if (!map.current || !destination.coordinate) {
+          return;
         }
-      };
-      // Event listener is cleaned up in useEffect cleanup via clickHandlersRef
-      el.addEventListener('click', clickHandler);
-      clickHandlersRef.current.push({ element: el, handler: clickHandler });
 
+        const targetCenter: [number, number] = [destination.coordinate.lng, destination.coordinate.lat];
+        map.current.stop();
+        map.current.flyTo({
+          center: targetCenter,
+          zoom: 15,
+          duration: 1200,
+          essential: true,
+        });
+
+        // Remove all popups from markers
+        markersRef.current.forEach((marker) => {
+          if (marker.getPopup()) {
+            marker.getPopup()?.remove();
+          }
+        });
+      };
+      el.onclick = clickHandler;
+      cleanupHandlers.push(() => {
+        el.onclick = null;
+      });
       markersRef.current.push(marker as any);
     });
 
     return () => {
-      // Clean up all event listeners (including close button handlers)
-      clickHandlersRef.current.forEach(({ element, handler }) => {
-        element.removeEventListener('click', handler);
-        element.removeEventListener('mouseenter', handler);
-        element.removeEventListener('mouseleave', handler);
-      });
-      clickHandlersRef.current = [];
+      // Clean up all event listeners
+      cleanupHandlers.forEach(removeHandler => removeHandler());
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
     };
-  }, [destinations, isMapLoaded, onMarkerClick]);
+  }, [destinations, isMapLoaded]);
 
   /**
    * useEffect 3: Listen to selected destination from store and fly to it
@@ -608,6 +556,10 @@ export function TourMap({
 
     // If no destination is selected, show all destinations
     if (!selectedDestinationId) {
+      if (selectedPopupRef.current) {
+        selectedPopupRef.current.remove();
+        selectedPopupRef.current = null;
+      }
       // Reset all marker styling to default
       markersRef.current.forEach((m) => {
         const el = m.getElement();
@@ -702,6 +654,11 @@ export function TourMap({
       return;
     }
 
+    if (selectedPopupRef.current) {
+      selectedPopupRef.current.remove();
+      selectedPopupRef.current = null;
+    }
+
     // Update marker styling for selected destination
     // Use updateMarkerZIndex to ensure correct z-index based on directions visibility
     markersRef.current.forEach((m) => {
@@ -737,7 +694,38 @@ export function TourMap({
       clearTimeout(popupTimeoutRef.current);
     }
     popupTimeoutRef.current = setTimeout(() => {
-      marker.togglePopup();
+      const popup = new mapboxgl.Popup({
+        offset: [0, -50],
+        closeButton: true,
+        closeOnClick: false,
+        anchor: 'bottom',
+        className: 'mapboxgl-popup destination-popup !z-1',
+        maxWidth: '300px',
+      }).setHTML(buildDestinationPopupHTML(destination));
+
+      marker.setPopup(popup);
+      popup.addTo(map.current as any);
+
+      const closeButton = popup.getElement()?.querySelector('.mapboxgl-popup-close-button') as HTMLElement | null;
+      if (closeButton) {
+        closeButton.style.cssText = `
+          width: 32px !important;
+          height: 32px !important;
+          font-size: 20px !important;
+          line-height: 32px !important;
+          padding: 0 !important;
+          right: 8px !important;
+          top: 8px !important;
+          background: rgba(255, 255, 255, 0.9) !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          cursor: pointer !important;
+        `;
+      }
+
+      selectedPopupRef.current = popup as any;
       popupTimeoutRef.current = null;
     }, 1500);
 
@@ -745,6 +733,10 @@ export function TourMap({
       if (popupTimeoutRef.current) {
         clearTimeout(popupTimeoutRef.current);
         popupTimeoutRef.current = null;
+      }
+      if (selectedPopupRef.current) {
+        selectedPopupRef.current.remove();
+        selectedPopupRef.current = null;
       }
     };
   }, [selectedDestinationId, destinations, isMapLoaded, updateMarkerZIndex]);
