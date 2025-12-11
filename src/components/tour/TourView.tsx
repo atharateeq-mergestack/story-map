@@ -13,6 +13,7 @@ import { DestinationCard } from './DestinationCard';
 import { DestinationDetailPanel } from './DestinationDetailPanel';
 import { TourHero } from './TourHero';
 import { TourMap } from './TourMap';
+import { TourViewMobile } from './TourViewMobile';
 
 type Destination = {
   id: string;
@@ -57,13 +58,13 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
 }
 
 /**
- * TourView Component
+ * TourViewDesktop Component
  *
- * Displays a tour with destinations organized by date. Two view modes:
+ * Desktop version of tour view with destinations organized by date. Two view modes:
  * - Overview: destination cards
  * - Detail: expanded panels when a destination is selected
  */
-export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
+function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewProps) {
   // State: activeDate (current date in nav), selectedDestinationId (triggers detail mode), topDestinationId (top panel in detail view)
   const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
   const activeDate = destinationController.useScopeState('activeDate')[0];
@@ -640,4 +641,36 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
       </div>
     </div>
   );
+}
+
+/**
+ * TourView Component
+ *
+ * Conditionally renders mobile or desktop version based on screen size (≤1000px = mobile)
+ */
+export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
+  // Detect screen size for mobile/desktop rendering
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setIsMobile(window.innerWidth <= 1000);
+    };
+
+    // Check on mount
+    checkScreenSize();
+
+    // Listen for resize events
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Render mobile version for screens ≤1000px
+  if (isMobile) {
+    return <TourViewMobile tour={tour} destinationsByDate={destinationsByDate} dates={dates} />;
+  }
+
+  // Desktop version
+  return <TourViewDesktop tour={tour} destinationsByDate={destinationsByDate} dates={dates} />;
 }
