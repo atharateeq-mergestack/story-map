@@ -1,7 +1,7 @@
 'use client';
 
 import mapboxgl from 'mapbox-gl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Text } from '@/components/ui/common/Text';
 import { cn, formatDate } from '@/lib/utils';
@@ -46,14 +46,6 @@ export function TourMapMobile({
 
   // Get selected destination from store
   const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
-
-  // Calculate selected destination
-  const selectedDestination = useMemo(
-    () => (selectedDestinationId
-      ? destinations.find(d => d.id === selectedDestinationId) || null
-      : null),
-    [destinations, selectedDestinationId],
-  );
 
   /**
    * useEffect 1: Initialize map with disabled scroll-to-zoom
@@ -481,7 +473,8 @@ export function TourMapMobile({
 
       {/* Mobile Detail Modal */}
       <DestinationDetailPanelMobile
-        destination={selectedDestination}
+        destinations={destinations}
+        selectedDestinationId={selectedDestinationId}
         open={selectedDestinationId !== null}
         onOpenChange={handleModalOpenChange}
       />
