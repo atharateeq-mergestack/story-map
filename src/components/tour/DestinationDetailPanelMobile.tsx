@@ -3,7 +3,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -39,12 +39,7 @@ export function DestinationDetailPanelMobile({
   open,
   onOpenChange,
 }: DestinationDetailPanelMobileProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const destinationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [currentImageIndices, setCurrentImageIndices] = useState<Map<string, number>>(() => new Map());
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasInitialScrolledRef = useRef(false);
-  const isUserScrollingRef = useRef(false);
 
   // Get selected destination
   const selectedDestination = destinations.find(d => d.id === selectedDestinationId) || null;
@@ -64,118 +59,52 @@ export function DestinationDetailPanelMobile({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destinationsKey]);
 
-  // Scroll to selected destination when modal first opens
-  useEffect(() => {
-    if (!selectedDestinationId || !scrollContainerRef.current || !open || hasInitialScrolledRef.current) {
+  // Navigation functions
+  const goToPreviousDestination = () => {
+    if (!selectedDestinationId || destinations.length === 0) {
       return;
     }
 
-    // Wait for refs to be set and DOM to be ready
-    const scrollToSelected = () => {
-      const selectedElement = destinationRefs.current.get(selectedDestinationId);
-      if (selectedElement && scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-
-        // Calculate scroll position to show the selected element
-        // Position it so it's visible but not necessarily centered
-        const scrollLeft = selectedElement.offsetLeft - container.offsetLeft - 20; // 20px padding from left
-
-        container.scrollTo({
-          left: scrollLeft,
-          behavior: 'smooth',
-        });
-
-        hasInitialScrolledRef.current = true;
-      } else {
-        // Retry if refs aren't ready yet
-        requestAnimationFrame(scrollToSelected);
+    const currentIndex = destinations.findIndex(d => d.id === selectedDestinationId);
+    if (currentIndex > 0) {
+      const previousDestination = destinations[currentIndex - 1];
+      if (previousDestination) {
+        destinationController.setSelectedDestination(previousDestination.id);
       }
-    };
-
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(scrollToSelected, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [selectedDestinationId, open]);
-
-  // Reset initial scroll flag when modal closes
-  useEffect(() => {
-    if (!open) {
-      hasInitialScrolledRef.current = false;
-      isUserScrollingRef.current = false;
-    }
-  }, [open]);
-
-  // Handle scroll to detect which destination is in view (70% threshold)
-  const handleScroll = () => {
-    if (!scrollContainerRef.current) {
-      return;
-    }
-
-    // Mark that user is scrolling
-    isUserScrollingRef.current = true;
-
-    const container = scrollContainerRef.current;
-    const containerRect = container.getBoundingClientRect();
-    const containerLeft = containerRect.left;
-    const containerWidth = containerRect.width;
-
-    // Calculate 70% visibility threshold
-    const visibilityThreshold = containerWidth * 0.5;
-    const thresholdStart = containerLeft;
-    const thresholdEnd = containerLeft + visibilityThreshold;
-
-    type VisibleDestination = { id: string; visibility: number };
-    let mostVisibleDestination: VisibleDestination | null = null;
-
-    for (const [destinationId, element] of destinationRefs.current.entries()) {
-      const elementRect = element.getBoundingClientRect();
-      const elementLeft = elementRect.left;
-      const elementRight = elementRect.right;
-      const elementWidth = elementRect.width;
-
-      // Calculate how much of the element is within the 70% threshold
-      const visibleStart = Math.max(elementLeft, thresholdStart);
-      const visibleEnd = Math.min(elementRight, thresholdEnd);
-      const visibleWidth = Math.max(0, visibleEnd - visibleStart);
-      const visibilityPercentage = visibleWidth / elementWidth;
-
-      // Check if this element has more visibility than the current most visible
-      if (visibilityPercentage > 0 && (!mostVisibleDestination || visibilityPercentage > mostVisibleDestination.visibility)) {
-        mostVisibleDestination = { id: destinationId, visibility: visibilityPercentage };
+    } else if (destinations.length > 0) {
+      // Loop to last destination
+      const lastDestination = destinations[destinations.length - 1];
+      if (lastDestination) {
+        destinationController.setSelectedDestination(lastDestination.id);
       }
     }
-
-    // Update selected destination if we found one that's 70% visible
-    if (mostVisibleDestination && mostVisibleDestination.visibility >= 0.5) {
-      const newSelectedId: string = mostVisibleDestination.id;
-      if (newSelectedId !== selectedDestinationId) {
-        // Update selected destination
-        destinationController.setSelectedDestination(newSelectedId);
-      }
-    }
-
-    // Clear existing timeout
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    // Clear user scrolling flag after scroll ends
-    scrollTimeoutRef.current = setTimeout(() => {
-      isUserScrollingRef.current = false;
-    }, 100);
   };
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+  const goToNextDestination = () => {
+    if (!selectedDestinationId || destinations.length === 0) {
+      return;
+    }
+
+    const currentIndex = destinations.findIndex(d => d.id === selectedDestinationId);
+    if (currentIndex < destinations.length - 1) {
+      const nextDestination = destinations[currentIndex + 1];
+      if (nextDestination) {
+        destinationController.setSelectedDestination(nextDestination.id);
       }
-    };
-  }, []);
+    } else if (destinations.length > 0) {
+      // Loop to first destination
+      const firstDestination = destinations[0];
+      if (firstDestination) {
+        destinationController.setSelectedDestination(firstDestination.id);
+      }
+    }
+  };
+
+  const currentIndex = selectedDestinationId
+    ? destinations.findIndex(d => d.id === selectedDestinationId)
+    : -1;
+  const canGoPrevious = destinations.length > 1;
+  const canGoNext = destinations.length > 1;
 
   if (destinations.length === 0 || !selectedDestination) {
     return null;
@@ -214,32 +143,32 @@ export function DestinationDetailPanelMobile({
             'max-h-[60vh] overflow-hidden flex flex-col',
           )}
         >
-          {/* Header with Close Button */}
-          <div className="flex justify-end pt-3 pb-2 px-4">
+          {/* Header with Close Button and Navigation */}
+          <div className="flex justify-end items-center pt-3 px-4">
+
+            {/* Close Button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
               className="h-8 w-8 rounded-full p-0"
+              aria-label="Close"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Horizontal Scrollable Destinations */}
-          <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-x-auto overflow-y-hidden px-4 pb-4 scrollbar-hide"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              scrollBehavior: 'smooth',
-            }}
-          >
-            <div className="flex gap-4" style={{ width: 'max-content' }}>
+          {/* Destinations Container */}
+          <div className="flex-1 overflow-hidden px-4 pb-4 relative">
+            <div className="h-full w-full">
               {destinations.map((destination) => {
                 const isSelected = destination.id === selectedDestinationId;
+
+                // Only render the selected destination
+                if (!isSelected) {
+                  return null;
+                }
+
                 const images = destination.images && destination.images.length > 0
                   ? destination.images
                   : ['/placeholder.svg'];
@@ -248,18 +177,7 @@ export function DestinationDetailPanelMobile({
                 return (
                   <div
                     key={destination.id}
-                    ref={(el) => {
-                      if (el) {
-                        destinationRefs.current.set(destination.id, el);
-                      } else {
-                        destinationRefs.current.delete(destination.id);
-                      }
-                    }}
-                    className={cn(
-                      'snap-center shrink-0 w-[85vw] transition-all duration-300',
-                      !isSelected && 'blur-sm opacity-60',
-                      isSelected && 'blur-0 opacity-100',
-                    )}
+                    className="w-full h-full transition-all duration-300"
                   >
                     {/* Image Section */}
                     <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-3">
@@ -327,15 +245,51 @@ export function DestinationDetailPanelMobile({
                       )}
 
                       {/* Description */}
-                      {destination.description && (
-                        <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">
-                          {destination.description}
-                        </p>
-                      )}
+
+                      <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3 h-20">
+                        {destination.description}
+                      </p>
+
                     </div>
                   </div>
                 );
               })}
+            </div>
+
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center pt-3 pb-2 px-4">
+              {/* Previous Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousDestination}
+                disabled={!canGoPrevious}
+                className="disabled:opacity-30"
+                aria-label="Previous destination"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentIndex + 1}
+                {' '}
+                /
+                {destinations.length}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextDestination}
+                disabled={!canGoNext}
+                className="disabled:opacity-30"
+                aria-label="Next destination"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </DialogPrimitive.Content>
