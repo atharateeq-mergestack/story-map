@@ -14,7 +14,7 @@ export function ImageCarousel({ images, title }: ImageCarouselProps) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="w-full bg-muted aspect-video flex items-center justify-center rounded-lg">
+      <div className="w-full bg-muted flex items-center justify-center">
         <p className="text-muted-foreground text-sm">No image available</p>
       </div>
     );
@@ -31,7 +31,7 @@ export function ImageCarousel({ images, title }: ImageCarouselProps) {
   return (
     <div className="w-full space-y-3">
       {/* Main Image */}
-      <div className="relative w-full bg-black rounded-lg overflow-hidden">
+      <div className="relative w-full bg-black overflow-hidden">
         <Image
           src={images[currentIndex] || '/placeholder.svg'}
           width={1000}

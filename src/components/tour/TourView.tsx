@@ -352,7 +352,7 @@ function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewProps) {
         const navHeight = navRef.current?.offsetHeight || 0;
         const elementPosition = firstPanel.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({
-          top: elementPosition - navHeight - 20,
+          top: elementPosition - navHeight + 5,
           behavior: 'smooth',
         });
         // Clear flag after scroll completes
@@ -387,7 +387,7 @@ function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewProps) {
         const navHeight = navRef.current?.offsetHeight || 0;
         const elementPosition = firstPanel.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({
-          top: elementPosition - navHeight - 20,
+          top: elementPosition - navHeight + 5,
           behavior: 'smooth',
         });
         // Clear flag after scroll completes
@@ -415,7 +415,7 @@ function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewProps) {
       const navHeight = navRef.current?.offsetHeight || 0;
       const elementPosition = section.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({
-        top: elementPosition - navHeight - 20,
+        top: elementPosition - navHeight + 5,
         behavior: 'smooth',
       });
       destinationController.setActiveDate(date);
@@ -506,7 +506,6 @@ function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewProps) {
                   daySectionRefs.current[date] = el;
                 }
               }}
-              className="mb-12 sm:mb-16"
             >
               {/* Sticky Day Heading */}
               <div className="sticky top-0 bg-background z-10 border-b border-foreground/10 p-1">

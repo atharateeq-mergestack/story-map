@@ -23,12 +23,12 @@ type DestinationDetailPanelProps = {
 export function DestinationDetailPanel({ destination, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
   return (
     <div
-      className={`bg-background rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+      className={`bg-background overflow-hidden shadow-lg transition-all duration-300 ${
         isBlurred ? 'blur-sm opacity-60' : 'blur-0 opacity-100'
       } ${isTop ? 'z-10' : 'z-0'}`}
     >
       {/* Media / Carousel */}
-      <div className="w-full h-64 sm:h-80 bg-gray-100">
+      <div className="w-full h-fit bg-gray-100">
         <ImageCarousel images={destination.images && destination.images?.length > 0 ? destination.images : ['/placeholder.svg']} title={destination.name} />
       </div>
 
