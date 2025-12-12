@@ -1,13 +1,12 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ChevronLeft, ChevronRight, XIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
-  DialogOverlay,
   DialogPortal,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -66,33 +65,32 @@ export function DestinationDetailPanelMobile({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
-        <DialogOverlay className="bg-black/50" />
+        {/* <DialogOverlay className="bg-black/50" /> */}
         <DialogPrimitive.Content
           className={cn(
             'fixed bottom-0 left-0 right-0 z-50',
-            'bg-background border-t border-border rounded-t-2xl shadow-2xl',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+            'bg-background ',
+            // 'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            // 'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
             'duration-300 ease-out',
             'max-h-[60vh] overflow-hidden flex flex-col',
           )}
         >
           {/* Drag Handle */}
-          <div className="flex justify-center pt-3 pb-2">
-            <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
-          </div>
-
-          {/* Close Button */}
-          <div className="absolute top-3 right-3 z-10">
+          <div className="flex justify-end pt-3 pb-2">
+            {/* <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" /> */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onOpenChange(false)}
               className="h-8 w-8 rounded-full p-0"
             >
-              <XIcon className="h-4 w-4" />
-              <span className="sr-only">Close</span>
+              <X className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Close Button */}
+          <div className="absolute top-3 right-3 z-10">
           </div>
 
           {/* Content - Scrollable */}
