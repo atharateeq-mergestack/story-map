@@ -318,14 +318,21 @@ export function initializeMap(
 
 /**
  * Fit map bounds to show all coordinates
+ * @param map - Mapbox map instance
+ * @param coordinates - Array of coordinates to fit bounds to
+ * @param padding - Optional padding. Can be a number (all sides) or an object with top, right, bottom, left
  */
 export function fitMapToCoordinates(
   map: mapboxgl.Map,
   coordinates: [number, number][],
+  padding?: number | { top: number; right: number; bottom: number; left: number },
 ): void {
   if (coordinates.length === 0) {
     return;
   }
+
+  const defaultPadding = 50;
+  const mapPadding = padding ?? defaultPadding;
 
   if (coordinates.length === 1) {
     // If only one coordinate, center on it with appropriate zoom
@@ -341,7 +348,7 @@ export function fitMapToCoordinates(
       new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
     );
     map.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-      padding: 50,
+      padding: mapPadding,
       maxZoom: 15,
     });
   }

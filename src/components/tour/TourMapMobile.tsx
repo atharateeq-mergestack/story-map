@@ -99,9 +99,15 @@ export function TourMapMobile({
     map.current?.on('load', () => {
       setIsMapLoaded(true);
 
-      // Fit map to coordinates
+      // Fit map to coordinates with mobile-specific padding (extra top and bottom)
+      // Top padding accounts for sticky date navigation bar (~72px) plus safe area
       if (map.current && coordinates.length > 0) {
-        fitMapToCoordinates(map.current, coordinates);
+        fitMapToCoordinates(map.current, coordinates, {
+          top: 180, // Extra top padding for date navigation bar
+          right: 50,
+          bottom: 200, // Extra bottom padding for destinations list
+          left: 50,
+        });
       }
     });
 
@@ -274,7 +280,12 @@ export function TourMapMobile({
             new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
           );
           map.current.fitBounds(bounds as unknown as mapboxgl.LngLatBounds, {
-            padding: 50,
+            padding: {
+              top: 180, // Extra top padding for date navigation bar
+              right: 50,
+              bottom: 200, // Extra bottom padding for destinations list
+              left: 50,
+            },
             maxZoom: 15,
             duration: 1500,
           });
@@ -366,11 +377,11 @@ export function TourMapMobile({
 
       {/* Bottom Destinations List - Horizontal Scrollable */}
       <div className="sticky bottom-0 z-50 bg-background border-t shadow-lg">
-        <div className="px-4 py-3">
+        <div className="py-3">
           {/* Day Header */}
           {currentDate && (
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 ml-3">
                 {selectedDateIndex + 1}
               </div>
               <div className="flex flex-col">
