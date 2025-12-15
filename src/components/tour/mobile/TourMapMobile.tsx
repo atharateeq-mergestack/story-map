@@ -1,14 +1,24 @@
 'use client';
 
+import type { RouteData } from '../DirectionsControl';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import mapboxgl from 'mapbox-gl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Text } from '@/components/ui/common/Text';
 import { cn, formatDate } from '@/lib/utils';
 import destinationController from '@/store/destinationController';
-import { fitMapToCoordinates, initializeMap } from '@/utils/map-utils';
+import searchController from '@/store/searchController';
+import {
+  addFallbackRoute,
+  addRoutesToMap,
+  clearRouteLayers,
+  fitMapToCoordinates,
+  initializeMap,
+} from '@/utils/map-utils';
 import { DestinationDetailPanelMobile } from './DestinationDetailPanelMobile';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
 type Destination = {
   id: string;
@@ -39,13 +49,145 @@ export function TourMapMobile({
   selectedDateIndex = 0,
   onMarkerClick,
 }: TourMapMobileProps) {
+  // Adjust this value to change the top margin of the search control
+  const GEOCODER_TOP_MARGIN = '60px';
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [routeData, setRouteData] = useState<RouteData | null>(null);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState<string>('');
+  const [appleMapsUrl, setAppleMapsUrl] = useState<string>('');
 
-  // Get selected destination from store
+  // Get selected destination and searched location from stores
   const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
+  const searchedLocation = searchController.useScopeState('searchedLocation')[0];
+
+  const formatDuration = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  const formatDistance = useCallback((meters: number): string => {
+    if (meters < 1000) {
+      return `${Math.round(meters)}m`;
+    }
+    return `${(meters / 1000).toFixed(2)} km`;
+  }, []);
+
+  // Get user's current location using Geolocation API
+  const getCurrentLocation = useCallback((): Promise<[number, number] | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.warn('Geolocation is not supported by this browser.');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Return [lng, lat] format for Mapbox
+          resolve([position.coords.longitude, position.coords.latitude]);
+        },
+        (error) => {
+          console.warn('Error getting current location:', error);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    });
+  }, []);
+
+  const fetchRoute = useCallback(async (
+    from: [number, number],
+    to: [number, number],
+  ): Promise<RouteData[]> => {
+    try {
+      // Request alternatives to get multiple route options
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}?geometries=geojson&steps=true&alternatives=true&access_token=${mapboxAccessToken}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        // Return all available routes (up to 3)
+        return data.routes.slice(0, 3).map((route: any) => ({
+          distance: route.distance,
+          duration: route.duration,
+          geometry: route.geometry as RouteData['geometry'],
+          legs: route.legs,
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching route:', error);
+      return [];
+    }
+  }, [mapboxAccessToken]);
+
+  // Helper function to clear all routes
+  const clearAllRoutes = useCallback(() => {
+    if (!map.current) {
+      return;
+    }
+
+    clearRouteLayers(map.current);
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+      searchMarkerRef.current = null;
+    }
+    setRouteData(null);
+    setGoogleMapsUrl('');
+    setAppleMapsUrl('');
+  }, []);
+
+  // Helper function to calculate and display route between two points
+  const calculateAndDisplayRoute = useCallback(async (
+    from: [number, number],
+    to: [number, number],
+  ) => {
+    if (!map.current) {
+      return;
+    }
+
+    // Clear previous routes
+    clearRouteLayers(map.current);
+
+    // Fetch routes from Mapbox Directions API (returns array of routes)
+    const fetchedRoutes = await fetchRoute(from, to);
+
+    if (fetchedRoutes.length > 0) {
+      // Store route data (first route)
+      if (fetchedRoutes[0]) {
+        setRouteData(fetchedRoutes[0]);
+      }
+
+      // Generate URLs for buttons
+      const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${from[1]},${from[0]}&destination=${to[1]},${to[0]}`;
+      const appleUrl = `https://maps.apple.com/?saddr=${from[1]},${from[0]}&daddr=${to[1]},${to[0]}`;
+      setGoogleMapsUrl(googleUrl);
+      setAppleMapsUrl(appleUrl);
+
+      // Add all routes to map (first one selected by default)
+      addRoutesToMap(map.current, fetchedRoutes, 0, from);
+    } else {
+      // Fallback: show straight line if route fetch fails
+      addFallbackRoute(map.current, from, to);
+      // Clear route data if fetch fails
+      setRouteData(null);
+      setGoogleMapsUrl('');
+      setAppleMapsUrl('');
+    }
+  }, [fetchRoute]);
 
   /**
    * useEffect 1: Initialize map with disabled scroll-to-zoom
@@ -109,14 +251,202 @@ export function TourMapMobile({
           left: 50,
         });
       }
+
+      // Add search if MapboxGeocoder exists
+      if (MapboxGeocoder) {
+        const geocoder = new MapboxGeocoder({
+          accessToken: mapboxAccessToken,
+          mapboxgl: mapboxgl as any,
+          marker: false,
+          placeholder: 'Search for a location',
+        });
+        map.current?.addControl(geocoder as any);
+
+        // Apply custom top margin to geocoder control
+        // The margin value is defined at the top of the component (GEOCODER_TOP_MARGIN)
+        const marginTimeout = setTimeout(() => {
+          const geocoderElement = map.current?.getContainer()?.querySelector('.mapboxgl-ctrl-geocoder') as HTMLElement;
+          if (geocoderElement) {
+            geocoderElement.style.marginTop = GEOCODER_TOP_MARGIN;
+          }
+        }, 0);
+
+        // Store timeout on map for cleanup
+        if (map.current) {
+          (map.current as any)._geocoderMarginTimeout = marginTimeout;
+        }
+
+        geocoder.on('result', (e: any) => {
+          const { center, place_name } = e.result;
+          if (!map.current) {
+            return;
+          }
+
+          // Save searched location to searchController
+          // The route calculation will be handled by a separate useEffect
+          searchController.setSearchedLocation(center, place_name || 'Searched Location');
+
+          // Fly to searched location
+          map.current.flyTo({ center, zoom: 14 });
+        });
+      }
     });
 
     return () => {
+      // Clean up geocoder margin timeout if it exists
+      if (map.current && (map.current as any)._geocoderMarginTimeout) {
+        clearTimeout((map.current as any)._geocoderMarginTimeout);
+      }
+      if (searchMarkerRef.current) {
+        searchMarkerRef.current.remove();
+        searchMarkerRef.current = null;
+      }
       map.current?.remove();
       map.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapboxAccessToken]);
+
+  // Clear routes when selectedDestinationId changes
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // Clear all routes when selectedDestinationId changes
+    clearAllRoutes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDestinationId, isMapLoaded]);
+
+  /**
+   * useEffect: Display search marker when searched location is set
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // Remove previous search marker if exists
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+      searchMarkerRef.current = null;
+    }
+
+    // If no searched location, just remove marker and return
+    if (!searchedLocation) {
+      return;
+    }
+
+    // Create red marker for searched location
+    const searchMarkerEl = document.createElement('div');
+    searchMarkerEl.style.cssText = `
+      width: 30px;
+      height: 30px;
+      background-color: #FF4444;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      cursor: pointer;
+    `;
+    const searchMarker = new mapboxgl.Marker({
+      element: searchMarkerEl,
+      anchor: 'center',
+    })
+      .setLngLat(searchedLocation.center)
+      .setPopup(
+        new mapboxgl.Popup({
+          offset: 15,
+          closeButton: true,
+          closeOnClick: false,
+        }).setHTML(
+          `<div style="padding: 8px;">
+            <strong style="font-size: 14px;">${searchedLocation.placeName}</strong>
+          </div>`,
+        ),
+      )
+      .addTo(map.current as any);
+    searchMarkerRef.current = searchMarker as any;
+
+    return () => {
+      if (searchMarkerRef.current) {
+        searchMarkerRef.current.remove();
+        searchMarkerRef.current = null;
+      }
+    };
+  }, [searchedLocation, isMapLoaded]);
+
+  /**
+   * useEffect: Calculate and display routes based on searched location
+   * It calculates routes from selected destination (or current location) to searched location
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) {
+      return;
+    }
+
+    // If no searched location, clear routes
+    if (!searchedLocation) {
+      clearAllRoutes();
+      return;
+    }
+
+    // Determine route endpoints
+    // Searched location is always the DESTINATION
+    // Starting point is either selected destination or current location
+    let from: [number, number] | null = null;
+    let to: [number, number] | null = null;
+
+    if (selectedDestinationId) {
+      // Route from selected destination to searched location
+      const destination = destinations.find(d => d.id === selectedDestinationId);
+      if (destination?.coordinate) {
+        from = [destination.coordinate.lng, destination.coordinate.lat];
+        to = searchedLocation.center;
+        calculateAndDisplayRoute(from, to);
+      }
+    } else {
+      // No selected destination - use current location as starting point
+      getCurrentLocation().then((currentLocation) => {
+        if (currentLocation && map.current) {
+          from = currentLocation;
+          to = searchedLocation.center;
+          calculateAndDisplayRoute(from, to);
+        } else {
+          // Could not get current location - clear route data
+          clearAllRoutes();
+        }
+      });
+      return;
+    }
+
+    // Calculate and display route if we have both endpoints
+    if (from && to) {
+      calculateAndDisplayRoute(from, to);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchedLocation, selectedDestinationId, getCurrentLocation, isMapLoaded]);
+
+  // Clear searched location when geocoder input is cleared
+  useEffect(() => {
+    if (!searchedLocation) {
+      return;
+    }
+
+    const geocoderContainer = document.querySelector('.mapboxgl-ctrl-geocoder');
+    const input = geocoderContainer?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+
+    const handleInput = () => {
+      if (input.value.trim() === '') {
+        searchController.clearSearchedLocation();
+      }
+    };
+
+    input.addEventListener('input', handleInput);
+
+    return () => {
+      input.removeEventListener('input', handleInput);
+    };
+  }, [searchedLocation]);
 
   /**
    * useEffect 2: Set up destination markers (no popups)
@@ -488,6 +818,11 @@ export function TourMapMobile({
         selectedDestinationId={selectedDestinationId}
         open={selectedDestinationId !== null}
         onOpenChange={handleModalOpenChange}
+        routeData={routeData}
+        googleMapsUrl={googleMapsUrl}
+        appleMapsUrl={appleMapsUrl}
+        formatDistance={formatDistance}
+        formatDuration={formatDuration}
       />
     </div>
   );

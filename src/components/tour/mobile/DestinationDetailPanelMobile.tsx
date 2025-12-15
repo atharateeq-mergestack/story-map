@@ -1,7 +1,8 @@
 'use client';
 
+import type { RouteData } from '../DirectionsControl';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,11 @@ type DestinationDetailPanelMobileProps = {
   selectedDestinationId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  routeData: RouteData | null;
+  googleMapsUrl: string;
+  appleMapsUrl: string;
+  formatDistance: (meters: number) => string;
+  formatDuration: (seconds: number) => string;
 };
 
 export function DestinationDetailPanelMobile({
@@ -38,6 +44,9 @@ export function DestinationDetailPanelMobile({
   selectedDestinationId,
   open,
   onOpenChange,
+  routeData,
+  googleMapsUrl,
+  appleMapsUrl,
 }: DestinationDetailPanelMobileProps) {
   const [currentImageIndices, setCurrentImageIndices] = useState<Map<string, number>>(() => new Map());
 
@@ -245,11 +254,39 @@ export function DestinationDetailPanelMobile({
                       )}
 
                       {/* Description */}
-
                       <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3 h-20">
                         {destination.description}
                       </p>
 
+                      {/* Route Information - Only show if route data exists */}
+                      {routeData && (
+                        <div className="m-1">
+                          <div className="flex justify-between gap-2">
+                            {googleMapsUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(googleMapsUrl, '_blank')}
+                                className="w-1/2 justify-start gap-2"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                Open in Google Maps
+                              </Button>
+                            )}
+                            {appleMapsUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(appleMapsUrl, '_blank')}
+                                className="w-1/2 justify-start gap-2"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                Open in Apple Maps
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
