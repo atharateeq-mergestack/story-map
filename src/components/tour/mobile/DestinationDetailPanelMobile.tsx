@@ -1,12 +1,13 @@
 'use client';
 
 import type { RouteData } from '../DirectionsControl';
-import { ChevronLeft, ChevronRight, ExternalLink, Navigation, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import destinationController from '@/store/destinationController';
+import searchController from '@/store/searchController';
 
 type Destination = {
   id: string;
@@ -38,8 +39,6 @@ export function DestinationDetailPanelMobile({
   routeData,
   googleMapsUrl,
   appleMapsUrl,
-  formatDistance,
-  formatDuration,
 }: DestinationDetailPanelMobileProps) {
   const [currentImageIndices, setCurrentImageIndices] = useState<Map<string, number>>(() => new Map());
 
@@ -67,6 +66,9 @@ export function DestinationDetailPanelMobile({
       return;
     }
 
+    // Clear search and route when navigating
+    searchController.clearSearchedLocation();
+
     const currentIndex = destinations.findIndex(d => d.id === selectedDestinationId);
     if (currentIndex > 0) {
       const previousDestination = destinations[currentIndex - 1];
@@ -86,6 +88,9 @@ export function DestinationDetailPanelMobile({
     if (!selectedDestinationId || destinations.length === 0) {
       return;
     }
+
+    // Clear search and route when navigating
+    searchController.clearSearchedLocation();
 
     const currentIndex = destinations.findIndex(d => d.id === selectedDestinationId);
     if (currentIndex < destinations.length - 1) {
@@ -141,12 +146,16 @@ export function DestinationDetailPanelMobile({
   const currentImageIndex = getImageIndex(selectedDestination.id);
 
   return (
-    <Card className="relative w-full border-none shadow-none animate-[slideUpFadeIn_0.4s_ease-out]">
+    <Card className="relative w-full border-none shadow-none animate-[slideUpFadeIn_0.6s_cubic-bezier(0.16,1,0.3,1)]">
       {/* Close Button */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => destinationController.clearSelectedDestination()}
+        onClick={() => {
+          destinationController.clearSelectedDestination();
+          // Clear search and route when navigating
+          searchController.clearSearchedLocation();
+        }}
         className="absolute top-0 right-0 h-8 w-8 rounded-full p-0 z-20 bg-background/90 hover:bg-background shadow-sm transition-all duration-200 hover:scale-110"
         aria-label="Close"
       >
@@ -155,7 +164,7 @@ export function DestinationDetailPanelMobile({
 
       <CardContent className="p-4">
         {/* Image Section */}
-        <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-3">
+        <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-3 animate-[slideUpFadeIn_0.5s_cubic-bezier(0.16,1,0.3,1)]" style={{ animationDelay: '0.1s', animationFillMode: 'forwards', opacity: 0 }}>
           <Image
             src={images[currentImageIndex] || '/placeholder.svg'}
             width={400}
@@ -199,7 +208,7 @@ export function DestinationDetailPanelMobile({
         </div>
 
         {/* Content Section */}
-        <div className="space-y-2">
+        <div className="space-y-2 animate-[slideUpFadeIn_0.5s_cubic-bezier(0.16,1,0.3,1)]" style={{ animationDelay: '0.2s', animationFillMode: 'forwards', opacity: 0 }}>
           {/* Name */}
           {selectedDestination.name && (
             <h3 className="text-base font-semibold text-foreground line-clamp-2">
@@ -226,51 +235,29 @@ export function DestinationDetailPanelMobile({
 
           {/* Route Information - Only show if route data exists */}
           {routeData && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-2 mb-3">
-                <Navigation className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
-                  Route to Search Location
-                </span>
-              </div>
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Distance:</span>
-                  <span className="font-medium text-foreground">
-                    {formatDistance(routeData.distance)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Duration:</span>
-                  <span className="font-medium text-foreground">
-                    {formatDuration(routeData.duration)}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                {googleMapsUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(googleMapsUrl, '_blank')}
-                    className="w-full justify-start gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open in Google Maps
-                  </Button>
-                )}
-                {appleMapsUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(appleMapsUrl, '_blank')}
-                    className="w-full justify-start gap-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open in Apple Maps
-                  </Button>
-                )}
-              </div>
+            <div className="flex justify-between items-center gap-2">
+              {googleMapsUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(googleMapsUrl, '_blank')}
+                  className="w-1/2 justify-start gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open in Google Maps
+                </Button>
+              )}
+              {appleMapsUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(appleMapsUrl, '_blank')}
+                  className="w-1/2 justify-start gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open in Apple Maps
+                </Button>
+              )}
             </div>
           )}
         </div>

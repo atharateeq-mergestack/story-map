@@ -429,6 +429,12 @@ export function TourMapMobile({
   // Clear searched location when geocoder input is cleared
   useEffect(() => {
     if (!searchedLocation) {
+      // Clear geocoder input when search is cleared
+      const geocoderContainer = document.querySelector('.mapboxgl-ctrl-geocoder');
+      const input = geocoderContainer?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+      if (input) {
+        input.value = '';
+      }
       return;
     }
 
@@ -705,7 +711,7 @@ export function TourMapMobile({
             /* Mobile Detail Card - Show when destination is selected */
               <div
                 key="detail-card"
-                className="p-4 animate-[slideUpFadeIn_0.4s_ease-out]"
+                className="p-4 animate-[slideUpFadeIn_0.6s_cubic-bezier(0.16,1,0.3,1)]"
               >
                 <DestinationDetailPanelMobile
                   destinations={destinations}
@@ -722,7 +728,7 @@ export function TourMapMobile({
             /* Bottom Destinations List - Show when no destination is selected */
               <div
                 key="destinations-list"
-                className="py-3 animate-[slideUpFadeIn_0.4s_ease-out]"
+                className="py-3 animate-[slideUpFadeIn_0.6s_cubic-bezier(0.16,1,0.3,1)]"
               >
                 {/* Day Header */}
                 {currentDate && (
@@ -765,10 +771,10 @@ export function TourMapMobile({
                                 key={destination.id}
                                 className={cn(
                                   'shrink-0 transition-all w-[240px]',
-                                  'animate-[slideLeftFadeIn_0.4s_ease-out]',
+                                  'animate-[slideLeftFadeIn_0.5s_cubic-bezier(0.16,1,0.3,1)]',
                                 )}
                                 style={{
-                                  animationDelay: `${index * 50}ms`,
+                                  animationDelay: `${index * 60}ms`,
                                   animationFillMode: 'forwards',
                                   opacity: 0,
                                 }}
