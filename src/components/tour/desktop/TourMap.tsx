@@ -1,6 +1,6 @@
 'use client';
 
-import type { RouteData } from './DirectionsControl';
+import type { RouteData } from '../DirectionsControl';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import mapboxgl from 'mapbox-gl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,7 +15,7 @@ import {
   initializeMap,
   updateRouteStyling,
 } from '@/utils/map-utils';
-import { DirectionsControl } from './DirectionsControl';
+import { DirectionsControl } from '../DirectionsControl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 

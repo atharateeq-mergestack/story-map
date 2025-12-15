@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn, formatDate } from '@/lib/utils';
 import { Env } from '@/libs/Env';
 import destinationController from '@/store/destinationController';
-import { TourHero } from './TourHero';
+import { TourHero } from '../TourHero';
 import { TourMapMobile } from './TourMapMobile';
 
 type Destination = {
