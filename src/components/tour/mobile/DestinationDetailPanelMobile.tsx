@@ -1,16 +1,11 @@
 'use client';
 
 import type { RouteData } from '../DirectionsControl';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Navigation, X } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogPortal,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 import destinationController from '@/store/destinationController';
 
 type Destination = {
@@ -30,8 +25,6 @@ type Destination = {
 type DestinationDetailPanelMobileProps = {
   destinations: Destination[];
   selectedDestinationId: string | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   routeData: RouteData | null;
   googleMapsUrl: string;
   appleMapsUrl: string;
@@ -42,11 +35,11 @@ type DestinationDetailPanelMobileProps = {
 export function DestinationDetailPanelMobile({
   destinations,
   selectedDestinationId,
-  open,
-  onOpenChange,
   routeData,
   googleMapsUrl,
   appleMapsUrl,
+  formatDistance,
+  formatDuration,
 }: DestinationDetailPanelMobileProps) {
   const [currentImageIndices, setCurrentImageIndices] = useState<Map<string, number>>(() => new Map());
 
@@ -115,7 +108,8 @@ export function DestinationDetailPanelMobile({
   const canGoPrevious = destinations.length > 1;
   const canGoNext = destinations.length > 1;
 
-  if (destinations.length === 0 || !selectedDestination) {
+  // Don't render if no destination is selected
+  if (destinations.length === 0 || !selectedDestination || !selectedDestinationId) {
     return null;
   }
 
@@ -141,196 +135,180 @@ export function DestinationDetailPanelMobile({
     setImageIndex(destinationId, newIndex);
   };
 
+  const images = selectedDestination.images && selectedDestination.images.length > 0
+    ? selectedDestination.images
+    : ['/placeholder.svg'];
+  const currentImageIndex = getImageIndex(selectedDestination.id);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPortal>
-        <DialogPrimitive.Content
-          className={cn(
-            'fixed bottom-0 left-0 right-0 z-50',
-            'bg-background',
-            'duration-300 ease-out',
-            'max-h-[60vh] overflow-hidden flex flex-col',
-          )}
-        >
-          {/* Header with Close Button and Navigation */}
-          <div className="flex justify-end items-center pt-3 px-4">
+    <Card className="relative w-full border-none shadow-none">
+      {/* Close Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => destinationController.clearSelectedDestination()}
+        className="absolute top-0 right-0 h-8 w-8 rounded-full p-0 z-20 bg-background/90 hover:bg-background shadow-sm"
+        aria-label="Close"
+      >
+        <X className="h-4 w-4" />
+      </Button>
 
-            {/* Close Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8 rounded-full p-0"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <CardContent className="p-4">
+        {/* Image Section */}
+        <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-3">
+          <Image
+            src={images[currentImageIndex] || '/placeholder.svg'}
+            width={400}
+            height={200}
+            alt={selectedDestination.name || 'Destination Image'}
+            className="w-full h-full object-cover"
+          />
 
-          {/* Destinations Container */}
-          <div className="flex-1 overflow-hidden px-4 pb-4 relative">
-            <div className="h-full w-full">
-              {destinations.map((destination) => {
-                const isSelected = destination.id === selectedDestinationId;
-
-                // Only render the selected destination
-                if (!isSelected) {
-                  return null;
-                }
-
-                const images = destination.images && destination.images.length > 0
-                  ? destination.images
-                  : ['/placeholder.svg'];
-                const currentImageIndex = getImageIndex(destination.id);
-
-                return (
-                  <div
-                    key={destination.id}
-                    className="w-full h-full transition-all duration-300"
-                  >
-                    {/* Image Section */}
-                    <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-3">
-                      <Image
-                        src={images[currentImageIndex] || '/placeholder.svg'}
-                        width={400}
-                        height={200}
-                        alt={destination.name || 'Destination Image'}
-                        className="w-full h-full object-cover"
-                      />
-
-                      {images.length > 1 && (
-                        <>
-                          {/* Left Arrow */}
-                          <button
-                            type="button"
-                            onClick={() => goToPreviousImage(destination.id, images.length)}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-all z-10"
-                            aria-label="Previous image"
-                          >
-                            <ChevronLeft size={16} />
-                          </button>
-
-                          {/* Right Arrow */}
-                          <button
-                            type="button"
-                            onClick={() => goToNextImage(destination.id, images.length)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-all z-10"
-                            aria-label="Next image"
-                          >
-                            <ChevronRight size={16} />
-                          </button>
-
-                          {/* Image Counter */}
-                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full">
-                            {currentImageIndex + 1}
-                            {' '}
-                            /
-                            {' '}
-                            {images.length}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Content Section */}
-                    <div className="space-y-2">
-                      {/* Name */}
-                      {destination.name && (
-                        <h3 className="text-base font-semibold text-foreground line-clamp-2">
-                          {destination.name}
-                        </h3>
-                      )}
-
-                      {/* Time */}
-                      {destination.timeSlot && (
-                        <p className="text-sm text-muted-foreground">
-                          {destination.timeSlot.start_time}
-                          {' '}
-                          -
-                          {' '}
-                          {destination.timeSlot.end_time}
-                          {destination.timeSlot.slot_label && ` (${destination.timeSlot.slot_label})`}
-                        </p>
-                      )}
-
-                      {/* Description */}
-                      <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3 h-20">
-                        {destination.description}
-                      </p>
-
-                      {/* Route Information - Only show if route data exists */}
-                      {routeData && (
-                        <div className="m-1">
-                          <div className="flex justify-between gap-2">
-                            {googleMapsUrl && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(googleMapsUrl, '_blank')}
-                                className="w-1/2 justify-start gap-2"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                                Open in Google Maps
-                              </Button>
-                            )}
-                            {appleMapsUrl && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(appleMapsUrl, '_blank')}
-                                className="w-1/2 justify-start gap-2"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                                Open in Apple Maps
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center pt-3 pb-2 px-4">
-              {/* Previous Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPreviousDestination}
-                disabled={!canGoPrevious}
-                className="disabled:opacity-30"
-                aria-label="Previous destination"
+          {images.length > 1 && (
+            <>
+              {/* Left Arrow */}
+              <button
+                type="button"
+                onClick={() => goToPreviousImage(selectedDestination.id, images.length)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-all z-10"
+                aria-label="Previous image"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {currentIndex + 1}
+                <ChevronLeft size={16} />
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                type="button"
+                onClick={() => goToNextImage(selectedDestination.id, images.length)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-all z-10"
+                aria-label="Next image"
+              >
+                <ChevronRight size={16} />
+              </button>
+
+              {/* Image Counter */}
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full">
+                {currentImageIndex + 1}
                 {' '}
                 /
-                {destinations.length}
-              </span>
+                {' '}
+                {images.length}
+              </div>
+            </>
+          )}
+        </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextDestination}
-                disabled={!canGoNext}
-                className="disabled:opacity-30"
-                aria-label="Next destination"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+        {/* Content Section */}
+        <div className="space-y-2">
+          {/* Name */}
+          {selectedDestination.name && (
+            <h3 className="text-base font-semibold text-foreground line-clamp-2">
+              {selectedDestination.name}
+            </h3>
+          )}
+
+          {/* Time */}
+          {selectedDestination.timeSlot && (
+            <p className="text-sm text-muted-foreground">
+              {selectedDestination.timeSlot.start_time}
+              {' '}
+              -
+              {' '}
+              {selectedDestination.timeSlot.end_time}
+              {selectedDestination.timeSlot.slot_label && ` (${selectedDestination.timeSlot.slot_label})`}
+            </p>
+          )}
+
+          {/* Description */}
+          <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3 h-20">
+            {selectedDestination.description}
+          </p>
+
+          {/* Route Information - Only show if route data exists */}
+          {routeData && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <Navigation className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">
+                  Route to Search Location
+                </span>
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Distance:</span>
+                  <span className="font-medium text-foreground">
+                    {formatDistance(routeData.distance)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Duration:</span>
+                  <span className="font-medium text-foreground">
+                    {formatDuration(routeData.duration)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {googleMapsUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(googleMapsUrl, '_blank')}
+                    className="w-full justify-start gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open in Google Maps
+                  </Button>
+                )}
+                {appleMapsUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(appleMapsUrl, '_blank')}
+                    className="w-full justify-start gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open in Apple Maps
+                  </Button>
+                )}
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Navigation Buttons */}
+        {destinations.length > 1 && (
+          <div className="flex justify-between items-center pt-3 border-t border-border mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousDestination}
+              disabled={!canGoPrevious}
+              className="disabled:opacity-30"
+              aria-label="Previous destination"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1}
+              {' '}
+              /
+              {destinations.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextDestination}
+              disabled={!canGoNext}
+              className="disabled:opacity-30"
+              aria-label="Next destination"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        </DialogPrimitive.Content>
-      </DialogPortal>
-    </Dialog>
+        )}
+      </CardContent>
+    </Card>
   );
 }

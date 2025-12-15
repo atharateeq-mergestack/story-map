@@ -681,13 +681,6 @@ export function TourMapMobile({
     }
   };
 
-  // Handle modal open/close
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      destinationController.clearSelectedDestination();
-    }
-  };
-
   // Check if we have any destinations with coordinates
   const hasCoordinates = destinations.some(dest => dest.coordinate !== null);
 
@@ -705,125 +698,127 @@ export function TourMapMobile({
         )}
       </div>
 
-      {/* Bottom Destinations List - Horizontal Scrollable */}
+      {/* Bottom Section - Show either destinations list OR detailed card */}
       <div className="sticky bottom-0 z-50 bg-background border-t shadow-lg">
-        <div className="py-3">
-          {/* Day Header */}
-          {currentDate && (
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 ml-3">
-                {selectedDateIndex + 1}
+        {selectedDestinationId
+          ? (
+            /* Mobile Detail Card - Show when destination is selected */
+              <div className="p-4">
+                <DestinationDetailPanelMobile
+                  destinations={destinations}
+                  selectedDestinationId={selectedDestinationId}
+                  routeData={routeData}
+                  googleMapsUrl={googleMapsUrl}
+                  appleMapsUrl={appleMapsUrl}
+                  formatDistance={formatDistance}
+                  formatDuration={formatDuration}
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Day
-                  {' '}
-                  {selectedDateIndex + 1}
-                </span>
-                <span className="text-sm font-semibold text-foreground">
-                  {formatDate(currentDate)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Horizontal Scrollable Destinations */}
-          {destinations.length === 0
-            ? (
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Text color="muted" className="text-sm">
-                      No destinations for this day
-                    </Text>
-                  </CardContent>
-                </Card>
-              )
-            : (
-                <div
-                  className="overflow-x-auto pb-2 mx-4 px-4"
-                >
-                  <div className="flex gap-3" style={{ width: 'max-content' }}>
-                    {destinations.map((destination) => {
-                      const isActive = selectedDestinationId === destination.id;
-
-                      return (
-                        <div
-                          key={destination.id}
-                          className={cn(
-                            'shrink-0 transition-all w-[240px]',
-                          )}
-                        >
-                          {/* Compact card view */}
-                          <Card
-                            className={cn(
-                              'cursor-pointer transition-all h-full',
-                              isActive && 'ring-2 ring-primary shadow-lg',
-                            )}
-                            onClick={() => handleDestinationClick(destination)}
-                          >
-                            <CardContent className="p-1">
-                              <div className="flex space-y-2 gap-2 items-center">
-                                {/* Image thumbnail if available */}
-                                <div className="w-20 h-12 rounded overflow-hidden bg-gray-200 mt-2">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={destination.images?.[0] ?? '/placeholder.svg'}
-                                    alt={destination.name ?? 'Destination Image'}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-
-                                <div>
-                                  {/* Name */}
-                                  {destination.name && (
-                                    <h3 className="text-sm font-semibold line-clamp-1">
-                                      {destination.name}
-                                    </h3>
-                                  )}
-
-                                  {/* Time */}
-                                  {destination.timeSlot && (
-                                    <p className="text-xs text-muted-foreground">
-                                      {destination.timeSlot.start_time}
-                                      {' '}
-                                      -
-                                      {' '}
-                                      {destination.timeSlot.end_time}
-                                      {destination.timeSlot.slot_label && ` (${destination.timeSlot.slot_label})`}
-                                    </p>
-                                  )}
-
-                                  {/* Description */}
-                                  {destination.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {destination.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      );
-                    })}
+            )
+          : (
+            /* Bottom Destinations List - Show when no destination is selected */
+              <div className="py-3">
+                {/* Day Header */}
+                {currentDate && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0 ml-3">
+                      {selectedDateIndex + 1}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Day
+                        {' '}
+                        {selectedDateIndex + 1}
+                      </span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatDate(currentDate)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
-        </div>
-      </div>
+                )}
 
-      {/* Mobile Detail Modal */}
-      <DestinationDetailPanelMobile
-        destinations={destinations}
-        selectedDestinationId={selectedDestinationId}
-        open={selectedDestinationId !== null}
-        onOpenChange={handleModalOpenChange}
-        routeData={routeData}
-        googleMapsUrl={googleMapsUrl}
-        appleMapsUrl={appleMapsUrl}
-        formatDistance={formatDistance}
-        formatDuration={formatDuration}
-      />
+                {/* Horizontal Scrollable Destinations */}
+                {destinations.length === 0
+                  ? (
+                      <Card>
+                        <CardContent className="p-4 text-center">
+                          <Text color="muted" className="text-sm">
+                            No destinations for this day
+                          </Text>
+                        </CardContent>
+                      </Card>
+                    )
+                  : (
+                      <div
+                        className="overflow-x-auto pb-2 mx-4 px-4"
+                      >
+                        <div className="flex gap-3" style={{ width: 'max-content' }}>
+                          {destinations.map((destination) => {
+                            return (
+                              <div
+                                key={destination.id}
+                                className={cn(
+                                  'shrink-0 transition-all w-[240px]',
+                                )}
+                              >
+                                {/* Compact card view */}
+                                <Card
+                                  className={cn(
+                                    'cursor-pointer transition-all h-full',
+                                  )}
+                                  onClick={() => handleDestinationClick(destination)}
+                                >
+                                  <CardContent className="p-1">
+                                    <div className="flex space-y-2 gap-2 items-center">
+                                      {/* Image thumbnail if available */}
+                                      <div className="w-20 h-12 rounded overflow-hidden bg-gray-200 mt-2">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={destination.images?.[0] ?? '/placeholder.svg'}
+                                          alt={destination.name ?? 'Destination Image'}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        {/* Name */}
+                                        {destination.name && (
+                                          <h3 className="text-sm font-semibold line-clamp-1">
+                                            {destination.name}
+                                          </h3>
+                                        )}
+
+                                        {/* Time */}
+                                        {destination.timeSlot && (
+                                          <p className="text-xs text-muted-foreground">
+                                            {destination.timeSlot.start_time}
+                                            {' '}
+                                            -
+                                            {' '}
+                                            {destination.timeSlot.end_time}
+                                            {destination.timeSlot.slot_label && ` (${destination.timeSlot.slot_label})`}
+                                          </p>
+                                        )}
+
+                                        {/* Description */}
+                                        {destination.description && (
+                                          <p className="text-xs text-muted-foreground line-clamp-2">
+                                            {destination.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+              </div>
+            )}
+      </div>
     </div>
   );
 }
