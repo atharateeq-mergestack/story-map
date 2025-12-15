@@ -78,6 +78,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
   const isProgrammaticSelectionRef = useRef<boolean>(false);
   const lastScrollTimeRef = useRef<number>(0);
   const lastScrollYRef = useRef<number>(0);
+  const lastScrollDirectionRef = useRef<'up' | 'down' | null>(null);
 
   // DOM refs: nav (date nav bar), daySectionRefs (date detection), destinationRefs (cards), detailPanelRefs (panels)
   const navRef = useRef<HTMLDivElement>(null);
@@ -147,30 +148,62 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
         return;
       }
 
-      // Skip updates during fast scrolling
+      // 2️⃣ Capture current scroll values
       const currentTime = Date.now();
       const currentScrollY = window.scrollY;
-      const timeDelta = currentTime - lastScrollTimeRef.current;
-      const scrollDelta = Math.abs(currentScrollY - lastScrollYRef.current);
 
-      // Update scroll refs
+      const SCROLL_EPSILON = 2;
+
+      const deltaY = currentScrollY - lastScrollYRef.current;
+
+      const isStationary = Math.abs(deltaY) < SCROLL_EPSILON;
+
+      // Update direction ONLY when user actually scrolls
+      if (!isStationary) {
+        lastScrollDirectionRef.current
+          = deltaY > 0 ? 'down' : 'up';
+      }
+
+      // Effective direction (stationary inherits last direction)
+      const effectiveScrollDirection = isStationary
+        ? lastScrollDirectionRef.current
+        : deltaY > 0
+          ? 'down'
+          : 'up';
+
+      const isScrollingDownOrStationary
+        = effectiveScrollDirection === 'down';
+
+      // 4️⃣ Fast-scroll guard (uses old ref values — correct)
+      const timeDelta = currentTime - lastScrollTimeRef.current;
+      const scrollDelta = Math.abs(deltaY);
+
+      // 5️⃣ Update scroll refs AFTER calculations
       lastScrollTimeRef.current = currentTime;
       lastScrollYRef.current = currentScrollY;
 
-      // Skip if scrolling too fast (>200px in <100ms)
+      // 6️⃣ Skip if scrolling too fast
       if (timeDelta > 0 && timeDelta < 100 && scrollDelta > 200) {
         return;
       }
 
-      // Check if still on same date section
-      const selectedDateSection = daySectionRefs.current[selectedDestination.date];
+      // 7️⃣ Check current date section visibility
+      const selectedDateSection
+        = daySectionRefs.current[selectedDestination.date];
       if (!selectedDateSection) {
         return;
       }
 
       const sectionRect = selectedDateSection.getBoundingClientRect();
-      // Skip if section not visible (scrolled to different date)
       if (sectionRect.bottom < 0 || sectionRect.top > window.innerHeight) {
+        return;
+      }
+
+      // 🔟 LAST-DESTINATION GUARD (USES DIRECTION)
+      const isLastDestination
+        = selectedDestinationId
+          === dayDestinations[dayDestinations.length - 1]?.id;
+      if (isLastDestination && isScrollingDownOrStationary) {
         return;
       }
 
@@ -182,7 +215,6 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
         const panel = detailPanelRefs.current[dest.id];
         if (panel) {
           const rect = panel.getBoundingClientRect();
-          // Panel visible and closest to top
           if (rect.top >= 0 && rect.top < minTop && rect.bottom > 0) {
             minTop = rect.top;
             topPanelId = dest.id;
@@ -195,12 +227,12 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
         topPanelId = dayDestinations[0]?.id || null;
       }
 
-      // Update only if top panel changed
+      // 1️⃣1️⃣ Update only if changed
       if (topPanelId !== prevTopDestinationIdRef.current && topPanelId) {
         prevTopDestinationIdRef.current = topPanelId;
         // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
         setTopDestinationId(topPanelId);
-        destinationController.setSelectedDestination(topPanelId); // Sync map
+        destinationController.setSelectedDestination(topPanelId);
       }
     };
 
@@ -223,6 +255,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
         scrollHandlerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDestination, destinationsByDate]);
 
   // Check if all destinations for a day have scrolled past viewport
@@ -333,6 +366,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
         clearTimeout(autoScrollTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDate]);
 
   // Handle destination card click: enter detail mode, update state, scroll to panel
