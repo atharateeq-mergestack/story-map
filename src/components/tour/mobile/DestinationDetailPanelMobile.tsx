@@ -141,13 +141,13 @@ export function DestinationDetailPanelMobile({
   const currentImageIndex = getImageIndex(selectedDestination.id);
 
   return (
-    <Card className="relative w-full border-none shadow-none">
+    <Card className="relative w-full border-none shadow-none animate-[slideUpFadeIn_0.4s_ease-out]">
       {/* Close Button */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => destinationController.clearSelectedDestination()}
-        className="absolute top-0 right-0 h-8 w-8 rounded-full p-0 z-20 bg-background/90 hover:bg-background shadow-sm"
+        className="absolute top-0 right-0 h-8 w-8 rounded-full p-0 z-20 bg-background/90 hover:bg-background shadow-sm transition-all duration-200 hover:scale-110"
         aria-label="Close"
       >
         <X className="h-4 w-4" />

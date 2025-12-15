@@ -699,11 +699,14 @@ export function TourMapMobile({
       </div>
 
       {/* Bottom Section - Show either destinations list OR detailed card */}
-      <div className="sticky bottom-0 z-50 bg-background border-t shadow-lg">
+      <div className="sticky bottom-0 z-50 bg-background border-t shadow-lg overflow-hidden">
         {selectedDestinationId
           ? (
             /* Mobile Detail Card - Show when destination is selected */
-              <div className="p-4">
+              <div
+                key="detail-card"
+                className="p-4 animate-[slideUpFadeIn_0.4s_ease-out]"
+              >
                 <DestinationDetailPanelMobile
                   destinations={destinations}
                   selectedDestinationId={selectedDestinationId}
@@ -717,7 +720,10 @@ export function TourMapMobile({
             )
           : (
             /* Bottom Destinations List - Show when no destination is selected */
-              <div className="py-3">
+              <div
+                key="destinations-list"
+                className="py-3 animate-[slideUpFadeIn_0.4s_ease-out]"
+              >
                 {/* Day Header */}
                 {currentDate && (
                   <div className="flex items-center gap-3 mb-3">
@@ -753,18 +759,25 @@ export function TourMapMobile({
                         className="overflow-x-auto pb-2 mx-4 px-4"
                       >
                         <div className="flex gap-3" style={{ width: 'max-content' }}>
-                          {destinations.map((destination) => {
+                          {destinations.map((destination, index) => {
                             return (
                               <div
                                 key={destination.id}
                                 className={cn(
                                   'shrink-0 transition-all w-[240px]',
+                                  'animate-[slideLeftFadeIn_0.4s_ease-out]',
                                 )}
+                                style={{
+                                  animationDelay: `${index * 50}ms`,
+                                  animationFillMode: 'forwards',
+                                  opacity: 0,
+                                }}
                               >
                                 {/* Compact card view */}
                                 <Card
                                   className={cn(
                                     'cursor-pointer transition-all h-full',
+                                    'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]',
                                   )}
                                   onClick={() => handleDestinationClick(destination)}
                                 >
