@@ -87,6 +87,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
   const destinationRefs = useRef<Record<string, HTMLDivElement>>({});
   const detailPanelRefs = useRef<Record<string, HTMLDivElement>>({});
   const mapboxToken = Env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+  const detailEntryIndexRef = useRef<number | null>(null);
 
   const allDestinations = dates.flatMap(date => destinationsByDate[date] || []);
   const totalDays = calculateTotalDays(tour.startDate, tour.endDate);
@@ -406,29 +407,32 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
 
   // Handle destination card click: enter detail mode, update state, scroll to panel
   const handleDestinationClick = (destination: Destination) => {
-    // Set flag to prevent scroll handler from updating selection
     isProgrammaticSelectionRef.current = true;
+
+    const dayDestinations = destinationsByDate[destination.date] || [];
+    const entryIndex = dayDestinations.findIndex(d => d.id === destination.id);
+
+    detailEntryIndexRef.current = entryIndex; // 👈 STORE ENTRY POINT
 
     destinationController.setSelectedDestination(destination.id);
     destinationController.setActiveDate(destination.date);
     setTopDestinationId(destination.id);
 
-    // Scroll to panel after DOM updates
     setTimeout(() => {
-      const firstPanel = detailPanelRefs.current[destination.id];
-      if (firstPanel) {
+      const panel = detailPanelRefs.current[destination.id];
+      if (panel) {
         const navHeight = navRef.current?.offsetHeight || 0;
-        const elementPosition = firstPanel.getBoundingClientRect().top + window.scrollY;
+        const elementPosition = panel.getBoundingClientRect().top + window.scrollY;
+
         window.scrollTo({
           top: elementPosition - navHeight + 5,
           behavior: 'smooth',
         });
-        // Clear flag after scroll completes
+
         setTimeout(() => {
           isProgrammaticSelectionRef.current = false;
         }, 600);
       } else {
-        // If panel not found, clear flag immediately
         isProgrammaticSelectionRef.current = false;
       }
     }, 100);
@@ -471,8 +475,48 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
 
   // Exit detail view: clear selection to return to overview mode
   const handleBackToOverview = () => {
+    if (!activeDate || !topDestinationId) {
+      destinationController.clearSelectedDestination();
+      setTopDestinationId(null);
+      return;
+    }
+
+    const dayDestinations = destinationsByDate[activeDate] || [];
+    const targetIndex = dayDestinations.findIndex(d => d.id === topDestinationId);
+
+    isProgrammaticSelectionRef.current = true;
+
     destinationController.clearSelectedDestination();
     setTopDestinationId(null);
+
+    // Wait for cards to mount
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const targetDestination = dayDestinations[targetIndex];
+        if (!targetDestination) {
+          isProgrammaticSelectionRef.current = false;
+          return;
+        }
+
+        const cardEl = destinationRefs.current[targetDestination.id];
+        if (!cardEl) {
+          isProgrammaticSelectionRef.current = false;
+          return;
+        }
+
+        const navHeight = navRef.current?.offsetHeight || 0;
+        const elementPosition = cardEl.getBoundingClientRect().top + window.scrollY;
+
+        window.scrollTo({
+          top: elementPosition - navHeight - 8,
+          behavior: 'auto', // IMPORTANT: no smooth to avoid jump illusion
+        });
+
+        setTimeout(() => {
+          isProgrammaticSelectionRef.current = false;
+        }, 100);
+      });
+    });
   };
 
   // Handle date nav click: scroll to day section, update activeDate, ensure overview mode
