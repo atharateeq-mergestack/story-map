@@ -528,7 +528,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
       const elementPosition = section.getBoundingClientRect().top + window.scrollY;
 
       // Adjust offset based on accountForMainNav: more offset when true (scroll higher), less when false
-      const additionalOffset = accountForMainNav ? 65 : 5;
+      const additionalOffset = accountForMainNav ? 65 : -5;
 
       window.scrollTo({
         top: elementPosition - navHeight - additionalOffset,
