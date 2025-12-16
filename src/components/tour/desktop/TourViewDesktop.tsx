@@ -585,7 +585,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
           )}
         >
           <div className={`container mx-auto px-3 `}>
-            <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3 overflow-x-auto py-2">
+            <div className="flex h-14 sm:h-16 items-center justify-center gap-2 sm:gap-3 overflow-x-auto py-2">
               {dates.map((date) => {
                 const isActive = activeDate === date;
                 return (
