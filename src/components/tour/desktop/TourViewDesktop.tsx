@@ -448,8 +448,12 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
     if (section) {
       const navHeight = navRef.current?.offsetHeight || 0;
       const elementPosition = section.getBoundingClientRect().top + window.scrollY;
+
+      // Adjust offset based on accountForMainNav: more offset when true (scroll higher), less when false
+      const additionalOffset = accountForMainNav ? 65 : 5;
+
       window.scrollTo({
-        top: elementPosition - navHeight + 5,
+        top: elementPosition - navHeight - additionalOffset,
         behavior: 'smooth',
       });
       destinationController.setActiveDate(date);
