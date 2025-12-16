@@ -172,7 +172,7 @@ export function TourViewMobile({ tour, destinationsByDate, dates, accountForMain
       )}
 
       {/* Main Content: Map for current day */}
-      <div className="flex-1 relative" style={{ minHeight: 'calc(100vh - 60px)' }}>
+      <div className="flex-1 relative" style={{ minHeight: accountForMainNav ? 'calc(100vh - 110px)' : 'calc(100vh - 60px)' }}>
         {dates.map((date, dayIndex) => {
           const dayDestinations = destinationsByDate[date] || [];
           const isActive = selectedDateIndex === dayIndex;

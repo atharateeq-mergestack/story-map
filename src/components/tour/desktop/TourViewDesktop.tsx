@@ -727,9 +727,9 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
                         variant="outline"
                         size="lg"
                         onClick={handleBackToOverview}
-                        className="gap-2 rounded-full shadow-lg"
+                        className="gap-2 w-[50px] h-[50px] shadow-lg"
                       >
-                        <X size={20} />
+                        <X size="40" />
                       </Button>
                     </div>
                   )}
