@@ -209,24 +209,58 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
       }
 
       let topPanelId: string | null = null;
-      let minTop = Infinity; // Closest panel to viewport top
+      let maxVisibility = 0; // Track highest visibility percentage
+      const viewportHeight = window.innerHeight;
+      const VISIBILITY_THRESHOLD = 0.8; // 80% visibility required
 
-      // Find panel closest to viewport top
+      // Find panel that is at least 80% visible in viewport
       dayDestinations.forEach((dest) => {
         const panel = detailPanelRefs.current[dest.id];
         if (panel) {
           const rect = panel.getBoundingClientRect();
-          if (rect.top >= 0 && rect.top < minTop && rect.bottom > 0) {
-            minTop = rect.top;
+          const panelHeight = rect.height;
+
+          // Calculate visible height of panel within viewport
+          const visibleTop = Math.max(rect.top, 0);
+          const visibleBottom = Math.min(rect.bottom, viewportHeight);
+          const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+          // Calculate visibility percentage
+          const visibilityPercentage = panelHeight > 0 ? visibleHeight / panelHeight : 0;
+
+          // Select panel if it meets 80% visibility threshold and has highest visibility
+          if (visibilityPercentage >= VISIBILITY_THRESHOLD && visibilityPercentage > maxVisibility) {
+            maxVisibility = visibilityPercentage;
             topPanelId = dest.id;
           }
         }
       });
 
-      // Fallback: use first panel if none at top
-      if (!topPanelId && dayDestinations.length > 0) {
-        topPanelId = dayDestinations[0]?.id || null;
-      }
+      // Fallback: if no panel meets 80% threshold, use the one with highest visibility
+      // if (!topPanelId && dayDestinations.length > 0) {
+      //   let fallbackPanelId: string | null = null;
+      //   let fallbackMaxVisibility = 0;
+
+      //   dayDestinations.forEach((dest) => {
+      //     const panel = detailPanelRefs.current[dest.id];
+      //     if (panel) {
+      //       const rect = panel.getBoundingClientRect();
+      //       const panelHeight = rect.height;
+
+      //       const visibleTop = Math.max(rect.top, 0);
+      //       const visibleBottom = Math.min(rect.bottom, viewportHeight);
+      //       const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      //       const visibilityPercentage = panelHeight > 0 ? visibleHeight / panelHeight : 0;
+
+      //       if (visibilityPercentage > fallbackMaxVisibility) {
+      //         fallbackMaxVisibility = visibilityPercentage;
+      //         fallbackPanelId = dest.id;
+      //       }
+      //     }
+      //   });
+
+      //   topPanelId = fallbackPanelId;
+      // }
 
       // 1️⃣1️⃣ Update only if changed
       if (topPanelId !== prevTopDestinationIdRef.current && topPanelId) {
