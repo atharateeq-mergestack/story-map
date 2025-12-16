@@ -94,6 +94,7 @@ export default async function TourPage({
         )
       }
       dates={dates}
+      accountForMainNav={false}
     />
   );
 }

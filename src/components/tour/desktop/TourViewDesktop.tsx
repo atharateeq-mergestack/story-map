@@ -42,6 +42,7 @@ type TourViewDesktopProps = {
   tour: Tour;
   destinationsByDate: Record<string, Destination[]>;
   dates: string[];
+  accountForMainNav?: boolean;
 };
 
 function calculateTotalDays(startDate: string | null, endDate: string | null): number {
@@ -63,7 +64,7 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
  * - Overview: destination cards
  * - Detail: expanded panels when a destination is selected
  */
-export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDesktopProps) {
+export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMainNav = false }: TourViewDesktopProps) {
   // State: activeDate (current date in nav), selectedDestinationId (triggers detail mode), topDestinationId (top panel in detail view)
   const selectedDestinationId = destinationController.useScopeState('selectedDestinationId')[0];
   const activeDate = destinationController.useScopeState('activeDate')[0];
@@ -496,9 +497,12 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
       {dates.length > 0 && (
         <nav
           ref={navRef}
-          className="sticky top-[-8px] z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
+          className={cn(
+            'sticky z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm',
+            accountForMainNav ? 'top-[66px]' : 'top-[-4px]',
+          )}
         >
-          <div className="container mx-auto px-3 sm:px-4">
+          <div className={`container mx-auto px-3 `}>
             <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3 overflow-x-auto py-2">
               {dates.map((date) => {
                 const isActive = activeDate === date;
@@ -650,11 +654,11 @@ export function TourViewDesktop({ tour, destinationsByDate, dates }: TourViewDes
                 </div>
 
                 {/* Right Panel: Map */}
-                <div className="w-full lg:w-[70%] relative order-1 lg:order-2">
+                <div className="w-[70%] relative order-1 lg:order-2">
                   <div
-                    className="sticky top-15"
+                    className={`sticky ${accountForMainNav ? 'top-30' : 'top-15'}`}
                     style={{
-                      height: 'calc(100vh - 4rem)',
+                      height: accountForMainNav ? `calc(100vh - 8.75rem)` : 'calc(100vh - 4rem)',
                       minHeight: '400px',
                     }}
                   >

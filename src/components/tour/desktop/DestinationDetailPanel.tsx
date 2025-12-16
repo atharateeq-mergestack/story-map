@@ -23,8 +23,8 @@ type DestinationDetailPanelProps = {
 export function DestinationDetailPanel({ destination, isBlurred = false, isTop = false }: DestinationDetailPanelProps) {
   return (
     <div
-      className={`bg-background overflow-hidden shadow-lg transition-all duration-300 ${
-        isBlurred ? 'blur-sm opacity-60' : 'blur-0 opacity-100'
+      className={`bg-background overflow-hidden  transition-all duration-300 my-30 ${
+        isBlurred ? 'opacity-50' : 'blur-0 opacity-100'
       } ${isTop ? 'z-10' : 'z-0'}`}
     >
       {/* Media / Carousel */}
@@ -33,11 +33,11 @@ export function DestinationDetailPanel({ destination, isBlurred = false, isTop =
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-6">
         {/* Time */}
         {destination.timeSlot && (
           <div>
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 className="text-lg font-semibold text-foreground">
               {destination.timeSlot.start_time}
               {' '}
               -
@@ -49,11 +49,11 @@ export function DestinationDetailPanel({ destination, isBlurred = false, isTop =
 
         {/* Description */}
         {destination.name && (
-          <p className="text-md font-semibold text-foreground/80 leading-relaxed">{destination.name}</p>
+          <p className="text-lg font-semibold text-foreground/80 leading-relaxed">{destination.name}</p>
         )}
         {/* Description */}
         {destination.description && (
-          <p className="text-sm text-foreground/80 leading-relaxed">{destination.description}</p>
+          <p className="text-md text-foreground/80 leading-relaxed">{destination.description}</p>
         )}
       </div>
     </div>

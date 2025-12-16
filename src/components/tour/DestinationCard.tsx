@@ -37,12 +37,12 @@ export function DestinationCard({ destination, isActive, onClick }: DestinationC
       aria-pressed={isActive}
       onClick={() => onClick?.()}
       onKeyDown={handleKeyDown}
-      className={`grid grid-cols-[80px_1fr] gap-3 items-start p-3 cursor-pointer transition-all rounded-lg border ${isActive ? 'ring-2 ring-foreground shadow-lg' : 'border-transparent'} hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary`}
+      className={`grid grid-cols-[130px_1fr] h-[15vh] gap-3 items-start p-3 cursor-pointer transition-all rounded-lg border ${isActive ? 'ring-2 ring-foreground shadow-lg' : 'border-transparent'} hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary`}
     >
       {/* Thumbnail */}
-      <div className="w-20 h-20 overflow-hidden rounded-lg bg-gray-200">
+      <div className="w-28 h-20 overflow-hidden rounded-lg bg-gray-200">
         <Image
-          width={80}
+          width={120}
           height={80}
           src={destination.images?.[0] || '/placeholder.svg'}
           alt={destination.name}

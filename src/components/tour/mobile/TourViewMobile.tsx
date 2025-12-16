@@ -37,6 +37,7 @@ type TourViewMobileProps = {
   tour: Tour;
   destinationsByDate: Record<string, Destination[]>;
   dates: string[];
+  accountForMainNav?: boolean;
 };
 
 function calculateTotalDays(startDate: string | null, endDate: string | null): number {
@@ -60,7 +61,7 @@ function calculateTotalDays(startDate: string | null, endDate: string | null): n
  * - Clicking destination shows detail in the same scrollable area
  * - No popups on map markers
  */
-export function TourViewMobile({ tour, destinationsByDate, dates }: TourViewMobileProps) {
+export function TourViewMobile({ tour, destinationsByDate, dates, accountForMainNav = false }: TourViewMobileProps) {
   const activeDate = destinationController.useScopeState('activeDate')[0];
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const navRef = useRef<HTMLDivElement>(null);
@@ -75,7 +76,7 @@ export function TourViewMobile({ tour, destinationsByDate, dates }: TourViewMobi
       // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setSelectedDateIndex(0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync selectedDateIndex with activeDate
@@ -139,7 +140,10 @@ export function TourViewMobile({ tour, destinationsByDate, dates }: TourViewMobi
       {dates.length > 0 && (
         <nav
           ref={navRef}
-          className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm"
+          className={cn(
+            'sticky z-40 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm',
+            accountForMainNav ? 'top-[56px] sm:top-[64px]' : 'top-0',
+          )}
         >
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-3 overflow-x-auto py-2">
@@ -168,7 +172,7 @@ export function TourViewMobile({ tour, destinationsByDate, dates }: TourViewMobi
       )}
 
       {/* Main Content: Map for current day */}
-      <div className="flex-1 relative" style={{ minHeight: '100vh' }}>
+      <div className="flex-1 relative" style={{ minHeight: 'calc(100vh - 60px)' }}>
         {dates.map((date, dayIndex) => {
           const dayDestinations = destinationsByDate[date] || [];
           const isActive = selectedDateIndex === dayIndex;
@@ -189,6 +193,7 @@ export function TourViewMobile({ tour, destinationsByDate, dates }: TourViewMobi
                   currentDate={currentDate}
                   selectedDateIndex={selectedDateIndex}
                   onMarkerClick={handleMarkerClick}
+                  accountForMainNav={accountForMainNav}
                 />
               </div>
             </div>

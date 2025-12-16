@@ -32,6 +32,7 @@ type TourViewProps = {
   tour: Tour;
   destinationsByDate: Record<string, Destination[]>;
   dates: string[];
+  accountForMainNav?: boolean;
 };
 
 /**
@@ -39,7 +40,7 @@ type TourViewProps = {
  *
  * Conditionally renders mobile or desktop version based on screen size (≤1000px = mobile)
  */
-export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
+export function TourView({ tour, destinationsByDate, dates, accountForMainNav = false }: TourViewProps) {
   // Detect screen size for mobile/desktop rendering
   const [isMobile, setIsMobile] = useState(false);
 
@@ -59,9 +60,9 @@ export function TourView({ tour, destinationsByDate, dates }: TourViewProps) {
 
   // Render mobile version for screens ≤1000px
   if (isMobile) {
-    return <TourViewMobile tour={tour} destinationsByDate={destinationsByDate} dates={dates} />;
+    return <TourViewMobile tour={tour} destinationsByDate={destinationsByDate} dates={dates} accountForMainNav={accountForMainNav} />;
   }
 
   // Desktop version
-  return <TourViewDesktop tour={tour} destinationsByDate={destinationsByDate} dates={dates} />;
+  return <TourViewDesktop tour={tour} destinationsByDate={destinationsByDate} dates={dates} accountForMainNav={accountForMainNav} />;
 }

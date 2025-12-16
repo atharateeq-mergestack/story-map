@@ -40,6 +40,7 @@ type TourMapMobileProps = {
   currentDate?: string;
   selectedDateIndex?: number;
   onMarkerClick?: (destinationId: string) => void;
+  accountForMainNav?: boolean;
 };
 
 export function TourMapMobile({
@@ -48,9 +49,10 @@ export function TourMapMobile({
   currentDate,
   selectedDateIndex = 0,
   onMarkerClick,
+  accountForMainNav = false,
 }: TourMapMobileProps) {
   // Adjust this value to change the top margin of the search control
-  const GEOCODER_TOP_MARGIN = '60px';
+  const GEOCODER_TOP_MARGIN = '10px';
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -235,7 +237,8 @@ export function TourMapMobile({
 
     // Disable scroll-to-zoom: only allow 2-finger touch zoom
     map.current.scrollZoom.disable();
-    // Enable double-click zoom (optional, can be disabled if needed)
+
+    // Enable double-click zoom
     // map.current.doubleClickZoom.disable();
 
     map.current?.on('load', () => {
@@ -245,9 +248,9 @@ export function TourMapMobile({
       // Top padding accounts for sticky date navigation bar (~72px) plus safe area
       if (map.current && coordinates.length > 0) {
         fitMapToCoordinates(map.current, coordinates, {
-          top: 180, // Extra top padding for date navigation bar
+          top: accountForMainNav ? 220 : 180, // Extra top padding for date navigation bar
           right: 50,
-          bottom: 200, // Extra bottom padding for destinations list
+          bottom: accountForMainNav ? 130 : 200, // Extra bottom padding for destinations list
           left: 50,
         });
       }
@@ -264,6 +267,7 @@ export function TourMapMobile({
 
         // Apply custom top margin to geocoder control
         // The margin value is defined at the top of the component (GEOCODER_TOP_MARGIN)
+        // eslint-disable-next-line react-web-api/no-leaked-timeout
         const marginTimeout = setTimeout(() => {
           const geocoderElement = map.current?.getContainer()?.querySelector('.mapboxgl-ctrl-geocoder') as HTMLElement;
           if (geocoderElement) {

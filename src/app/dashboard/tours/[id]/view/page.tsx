@@ -77,6 +77,7 @@ export default async function ViewAsUserPage({
           )
         }
         dates={dates}
+        accountForMainNav={true}
       />
     </div>
   );
