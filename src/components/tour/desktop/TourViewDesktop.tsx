@@ -116,9 +116,6 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
     const destination = allDestinations.find(d => d.id === selectedDestinationId);
     // Clear selection if date mismatch
     if (destination && destination.date !== activeDate) {
-      destinationController.clearSelectedDestination();
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setTopDestinationId(null);
       prevTopDestinationIdRef.current = null;
     }
   }, [activeDate, selectedDestinationId, allDestinations]);
@@ -147,6 +144,11 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
     const handleScroll = () => {
       // Skip updates if destination was set programmatically (not by user scroll)
       if (isProgrammaticSelectionRef.current) {
+        return;
+      }
+
+      const isSelectedDestinationActive = selectedDestination.date === activeDate;
+      if (!isSelectedDestinationActive) {
         return;
       }
 
@@ -379,9 +381,6 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
       if (candidateActiveDate && activeDate !== candidateActiveDate) {
         // Clear selection if moving to different date
         if (!isAutoScrolling && selectedDestination && selectedDestination.date !== candidateActiveDate) {
-          destinationController.clearSelectedDestination();
-          // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-          setTopDestinationId(null);
           prevTopDestinationIdRef.current = null;
         }
 
@@ -465,7 +464,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
         // Clear flag after scroll completes
         setTimeout(() => {
           isProgrammaticSelectionRef.current = false;
-        }, 600);
+        }, 1000);
       } else {
         // If panel not found, clear flag immediately
         isProgrammaticSelectionRef.current = false;
@@ -514,7 +513,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
 
         setTimeout(() => {
           isProgrammaticSelectionRef.current = false;
-        }, 100);
+        }, 1000);
       });
     });
   };
@@ -535,9 +534,6 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
         behavior: 'smooth',
       });
       destinationController.setActiveDate(date);
-      // Return to overview mode
-      destinationController.clearSelectedDestination();
-      setTopDestinationId(null);
     }
     setTimeout(() => {
       isProgrammaticSelectionRef.current = false;
@@ -722,7 +718,7 @@ export function TourViewDesktop({ tour, destinationsByDate, dates, accountForMai
 
                   {/* Close button: visible in detail mode */}
                   {isDaySelected && (
-                    <div className="sticky bottom-4 z-50 flex justify-center mt-4">
+                    <div className="sticky bottom-4 z-2 flex justify-center mt-4">
                       <Button
                         variant="outline"
                         size="lg"
